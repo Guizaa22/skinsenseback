@@ -1,0 +1,22 @@
+spring:
+  config:
+    activate:
+      on-profile: dev
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/beauty_center_db}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:mouadhmb12}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  defer-datasource-initialization: true
+jwt:
+  secret: ${JWT_SECRET:change-me}
+encryption:
+  key: ${ENCRYPTION_KEY:change-me}
+logging:
+  level:
+    root: INFO

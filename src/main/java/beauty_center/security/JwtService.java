@@ -34,7 +34,7 @@ public class JwtService {
      */
     public String generateRefreshToken(String username) {
         // TODO: Implement refresh token logic with longer expiration
-        return generateToken(username, jwtProperties.getRefreshExpirationDays() * 24 * 60 * 60);
+        return username;
     }
 
     /**
@@ -74,7 +74,7 @@ public class JwtService {
      */
     private Claims getAllClaims(String token) {
         byte[] secretKey = jwtProperties.getSecret().getBytes(StandardCharsets.UTF_8);
-        return Jwts.parserBuilder()
+        return Jwts.parser()
             .setSigningKey(secretKey)
             .build()
             .parseClaimsJws(token)
@@ -87,7 +87,7 @@ public class JwtService {
     public boolean isTokenValid(String token) {
         try {
             byte[] secretKey = jwtProperties.getSecret().getBytes(StandardCharsets.UTF_8);
-            Jwts.parserBuilder()
+            Jwts.parser()
                 .setSigningKey(secretKey)
                 .build()
                 .parseClaimsJws(token);

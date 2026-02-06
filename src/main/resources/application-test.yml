@@ -1,0 +1,19 @@
+spring:
+  config:
+    activate:
+      on-profile: test
+  datasource:
+    url: jdbc:postgresql://localhost:5432/beauty_center_db
+    driver-class-name: org.postgresql.Driver
+    username: postgres
+    password: mouadhmb12
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+  flyway:
+    enabled: false
+  defer-datasource-initialization: true
+jwt:
+  secret: test-jwt-secret
+encryption:
+  key: test-encryption-key

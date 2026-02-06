@@ -19,6 +19,8 @@ target/
 *.iml
 *.ipr
 *.class
+*.ids
+runConfigurations/
 
 ### NetBeans ###
 /nbproject/private/
@@ -36,10 +38,17 @@ build/
 *.swo
 *~
 
+### Eclipse ###
+.classpath.bak
+.project.bak
+
 ### Environment ###
 .env
 .env.local
 .env.*.local
+*.properties.local
+.env.development
+application-local.yml
 
 ### OS ###
 Thumbs.db
@@ -54,3 +63,18 @@ log4j.properties
 *.db
 *.sqlite
 *.h2.db
+*.sql.gz
+
+### Maven ###
+.m2/
+*.jar.orig
+dependency-reduced-pom.xml
+
+### Temporary Files ###
+*.tmp
+*.temp
+.cache/
+
+### Backup Files ###
+*.rej
+*.orig

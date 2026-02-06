@@ -2,18 +2,18 @@ version: '3.9'
 
 services:
   postgres:
-    image: postgres:17-alpine
+    image: postgres:16.11-alpine
     container_name: beauty_center_postgres
     environment:
-      POSTGRES_DB: beauty_center
-      POSTGRES_USER: beauty
-      POSTGRES_PASSWORD: beauty
+      POSTGRES_DB: beauty_center_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: mouadhmb12
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U beauty"]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
