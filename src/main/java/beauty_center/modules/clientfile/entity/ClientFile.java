@@ -6,12 +6,14 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 /**
  * Client file (dossier) entity containing client personal and medical information.
  * Sensitive data with strict access control required.
+ * Sections: intake, medical history, aesthetic procedure history.
+ * Uses OffsetDateTime for timezone-aware timestamps.
  */
 @Entity
 @Table(name = "client_file")
@@ -28,31 +30,56 @@ public class ClientFile {
     @Column(name = "client_id", nullable = false, columnDefinition = "UUID", unique = true)
     private UUID clientId;
 
-    @Column(name = "medical_history")
-    private String medicalHistory;
+    // ===== Intake Section =====
+    @Column(name = "how_did_you_hear_about_us")
+    private String howDidYouHearAboutUs;
 
-    @Column(name = "allergies_and_reactions")
-    private String allergiesAndReactions;
+    @Column(name = "consultation_reason", columnDefinition = "TEXT")
+    private String consultationReason;
 
-    @Column(name = "current_treatments")
+    @Column(name = "objective", columnDefinition = "TEXT")
+    private String objective;
+
+    @Column(name = "care_type")
+    private String careType;
+
+    @Column(name = "skincare_routine", columnDefinition = "TEXT")
+    private String skincareRoutine;
+
+    @Column(name = "habits", columnDefinition = "TEXT")
+    private String habits;
+
+    // ===== Medical History Section =====
+    @Column(name = "medical_background", columnDefinition = "TEXT")
+    private String medicalBackground;
+
+    @Column(name = "current_treatments", columnDefinition = "TEXT")
     private String currentTreatments;
 
-    @Column(name = "photo_consent_followup")
-    private boolean photoConsentFollowup = false;
+    @Column(name = "allergies_and_reactions", columnDefinition = "TEXT")
+    private String allergiesAndReactions;
 
-    @Column(name = "photo_consent_marketing")
-    private boolean photoConsentMarketing = false;
+    // ===== Aesthetic Procedure History Section =====
+    @Column(name = "procedures", columnDefinition = "TEXT")
+    private String procedures;
+
+    // ===== Consent Section =====
+    @Column(name = "photo_consent_for_followup")
+    private boolean photoConsentForFollowup = false;
+
+    @Column(name = "photo_consent_for_marketing")
+    private boolean photoConsentForMarketing = false;
 
     @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+    private OffsetDateTime createdAt;
 
     @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+    private OffsetDateTime updatedAt;
 
     @PrePersist
     protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
+        this.createdAt = OffsetDateTime.now();
+        this.updatedAt = OffsetDateTime.now();
         if (this.id == null) {
             this.id = UUID.randomUUID();
         }
@@ -60,7 +87,7 @@ public class ClientFile {
 
     @PreUpdate
     protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
+        this.updatedAt = OffsetDateTime.now();
     }
 
 }

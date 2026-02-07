@@ -6,13 +6,13 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 /**
  * User account entity representing any user in the system.
  * Base class for polymorphic hierarchy: Client, Employee, Admin.
- * Uses UUID as primary key and timestamps for audit trail.
+ * Uses UUID as primary key and OffsetDateTime for timezone-aware timestamps.
  */
 @Entity
 @Table(name = "user_account")
@@ -48,15 +48,15 @@ public class UserAccount {
     private Role role;
 
     @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+    private OffsetDateTime createdAt;
 
     @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+    private OffsetDateTime updatedAt;
 
     @PrePersist
     protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
+        this.createdAt = OffsetDateTime.now();
+        this.updatedAt = OffsetDateTime.now();
         if (this.id == null) {
             this.id = UUID.randomUUID();
         }
@@ -64,7 +64,7 @@ public class UserAccount {
 
     @PreUpdate
     protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
+        this.updatedAt = OffsetDateTime.now();
     }
 
 }

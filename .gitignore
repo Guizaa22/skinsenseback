@@ -78,3 +78,10 @@ dependency-reduced-pom.xml
 ### Backup Files ###
 *.rej
 *.orig
+
+### Docs
+TESTING_GUIDE_PHASE1.md
+IMPLEMENTATION_PHASE1_SUMMARY.md
+FILES_MODIFIED_CREATED.md
+EXECUTIVE_SUMMARY.md
+DOCUMENTATION_INDEX-epic1.md

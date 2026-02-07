@@ -1,4 +1,4 @@
-package beauty_center.modules.appointments.entity;
+package beauty_center.modules.clientfile.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -10,42 +10,29 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 /**
- * Appointment entity representing a scheduled service for a client.
- * Uses OffsetDateTime for timezone-aware timestamps.
+ * ClientConsent entity tracking client notification preferences (SMS opt-in).
+ * One consent record per client with unsubscribe token.
  */
 @Entity
-@Table(name = "appointment")
+@Table(name = "client_consent")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Appointment {
+public class ClientConsent {
 
     @Id
     @Column(name = "id", columnDefinition = "UUID")
     private UUID id = UUID.randomUUID();
 
-    @Column(name = "client_id", nullable = false, columnDefinition = "UUID")
+    @Column(name = "client_id", nullable = false, columnDefinition = "UUID", unique = true)
     private UUID clientId;
 
-    @Column(name = "employee_id", nullable = false, columnDefinition = "UUID")
-    private UUID employeeId;
+    @Column(name = "sms_opt_in", nullable = false)
+    private boolean smsOptIn = true;
 
-    @Column(name = "beauty_service_id", columnDefinition = "UUID")
-    private UUID beautyServiceId;
-
-    @Column(name = "start_at", nullable = false)
-    private OffsetDateTime startAt;
-
-    @Column(name = "end_at", nullable = false)
-    private OffsetDateTime endAt;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false)
-    private AppointmentStatus status = AppointmentStatus.CONFIRMED;
-
-    @Column(name = "cancellation_reason")
-    private String cancellationReason;
+    @Column(name = "sms_unsub_token")
+    private String smsUnsubToken;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
@@ -66,5 +53,4 @@ public class Appointment {
     protected void onUpdate() {
         this.updatedAt = OffsetDateTime.now();
     }
-
 }

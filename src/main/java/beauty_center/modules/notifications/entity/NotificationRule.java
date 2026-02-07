@@ -1,4 +1,4 @@
-package beauty_center.modules.appointments.entity;
+package beauty_center.modules.notifications.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -10,42 +10,35 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 /**
- * Appointment entity representing a scheduled service for a client.
- * Uses OffsetDateTime for timezone-aware timestamps.
+ * NotificationRule entity defining templates for automatic notifications.
+ * Specifies when and how notifications should be sent (e.g., 24h reminder via SMS).
  */
 @Entity
-@Table(name = "appointment")
+@Table(name = "notification_rule")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Appointment {
+public class NotificationRule {
 
     @Id
     @Column(name = "id", columnDefinition = "UUID")
     private UUID id = UUID.randomUUID();
 
-    @Column(name = "client_id", nullable = false, columnDefinition = "UUID")
-    private UUID clientId;
-
-    @Column(name = "employee_id", nullable = false, columnDefinition = "UUID")
-    private UUID employeeId;
-
     @Column(name = "beauty_service_id", columnDefinition = "UUID")
     private UUID beautyServiceId;
 
-    @Column(name = "start_at", nullable = false)
-    private OffsetDateTime startAt;
+    @Column(name = "type", nullable = false)
+    private String type;  // BOOKING_CONFIRMATION, REMINDER_24H, REMINDER_2H
 
-    @Column(name = "end_at", nullable = false)
-    private OffsetDateTime endAt;
+    @Column(name = "channel", nullable = false)
+    private String channel;  // EMAIL, SMS
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false)
-    private AppointmentStatus status = AppointmentStatus.CONFIRMED;
+    @Column(name = "offset_hours")
+    private Integer offsetHours;  // for reminders: -24, -2, etc.
 
-    @Column(name = "cancellation_reason")
-    private String cancellationReason;
+    @Column(name = "is_enabled", nullable = false)
+    private boolean isEnabled = true;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
@@ -66,5 +59,4 @@ public class Appointment {
     protected void onUpdate() {
         this.updatedAt = OffsetDateTime.now();
     }
-
 }

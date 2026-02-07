@@ -6,12 +6,13 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 /**
  * Professional note entity for post-appointment staff documentation.
  * Only staff members can create/edit these notes about clients.
+ * Uses OffsetDateTime for timezone-aware timestamps.
  */
 @Entity
 @Table(name = "professional_note")
@@ -53,15 +54,15 @@ public class ProfessionalNote {
     private String nextAppointmentSuggestion;
 
     @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+    private OffsetDateTime createdAt;
 
     @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+    private OffsetDateTime updatedAt;
 
     @PrePersist
     protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
+        this.createdAt = OffsetDateTime.now();
+        this.updatedAt = OffsetDateTime.now();
         if (this.id == null) {
             this.id = UUID.randomUUID();
         }
@@ -69,7 +70,7 @@ public class ProfessionalNote {
 
     @PreUpdate
     protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
+        this.updatedAt = OffsetDateTime.now();
     }
-
 }
+

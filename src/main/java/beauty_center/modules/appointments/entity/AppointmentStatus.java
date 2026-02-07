@@ -6,7 +6,5 @@ package beauty_center.modules.appointments.entity;
 public enum AppointmentStatus {
     CONFIRMED,
     CANCELED,
-    COMPLETED,
-    NO_SHOW,
-    PENDING
+    COMPLETED
 }
