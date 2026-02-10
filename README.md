@@ -118,10 +118,66 @@ GitHub Actions workflow: `.github/workflows/ci.yml`
 
 Runs tests on every push and pull request.
 
+## Features
+
+### Section 4: Employee Management ✅
+
+Complete implementation of employee management system with:
+
+**Employee Accounts:**
+- Create employee accounts with secure password hashing (BCrypt)
+- Update employee information (name, email, phone)
+- Activate/deactivate employee accounts
+- List and filter employees by active status
+- Email uniqueness validation
+- Role enforcement (EMPLOYEE role only)
+
+**Working Time Slots:**
+- Define employee weekly schedules (day of week + time ranges)
+- Full replacement strategy for schedule updates
+- Validation: end time > start time
+- Overlap detection for same-day time slots
+- Support for all days of week (MON-SUN)
+
+**Absences Management:**
+- Create and delete employee absences (vacations, time off)
+- Date range validation (end > start)
+- Overlap detection for existing absences
+- Appointment conflict detection (MVP: blocks absence if confirmed appointments exist)
+- Timezone-aware timestamps (OffsetDateTime)
+
+**Security:**
+- All endpoints require ADMIN role (`@PreAuthorize("hasRole('ADMIN')")`)
+- JWT authentication required
+- Comprehensive authorization checks
+
+**API Endpoints:**
+- `POST /api/admin/employees` - Create employee
+- `GET /api/admin/employees` - List/filter employees
+- `GET /api/admin/employees/{id}` - Get employee details
+- `PUT /api/admin/employees/{id}` - Update employee
+- `PUT /api/admin/employees/{id}/working-times` - Replace weekly schedule
+- `GET /api/admin/employees/{id}/working-times` - Get schedule
+- `POST /api/admin/employees/{id}/absences` - Create absence
+- `GET /api/admin/employees/{id}/absences` - Get absences
+- `DELETE /api/admin/absences/{absenceId}` - Delete absence
+
+**Testing:**
+- Comprehensive integration tests covering all endpoints
+- Validation scenario testing (overlaps, invalid dates, etc.)
+- Role-based access control testing
+- Test coverage for business logic in services
+
+See `API_ROUTES_DOCUMENTATION.md` for detailed API documentation.
+
+---
+
 ## Development Notes
 
 - Package-by-feature structure for parallel development
 - Constructor injection only (no field injection)
 - DTOs use Jakarta validation annotations
 - Entities include createdAt/updatedAt with @PrePersist/@PreUpdate
-- All code is compiling skeleton with TODO comments (no pseudo-code)
+- Transactional service methods with `@Transactional`
+- Comprehensive logging with SLF4J
+- Integration tests using MockMvc and H2 in-memory database

@@ -10,14 +10,15 @@
 
 1. [Authentication](#authentication)
 2. [User Management](#user-management)
-3. [Beauty Services](#beauty-services)
-4. [Appointments](#appointments)
-5. [Scheduling & Availability](#scheduling--availability)
-6. [Client Files](#client-files)
-7. [Professional Notes](#professional-notes)
-8. [Audit](#audit)
-9. [Test Users](#test-users)
-10. [Response Format](#response-format)
+3. [Employee Management](#employee-management)
+4. [Beauty Services](#beauty-services)
+5. [Appointments](#appointments)
+6. [Scheduling & Availability](#scheduling--availability)
+7. [Client Files](#client-files)
+8. [Professional Notes](#professional-notes)
+9. [Audit](#audit)
+10. [Test Users](#test-users)
+11. [Response Format](#response-format)
 
 ---
 
@@ -191,6 +192,216 @@ All authentication endpoints are **public** (no token required).
   "data": "Employee list endpoint"
 }
 ```
+
+---
+
+## 👔 Employee Management
+
+All employee management endpoints require **ADMIN** role.
+
+### POST `/api/admin/employees`
+**Description:** Create new employee account with password
+**Access:** ADMIN only
+**Headers:** `Authorization: Bearer {accessToken}`
+**Request Body:**
+```json
+{
+  "fullName": "Jane Smith",
+  "email": "jane.smith@beautycenter.com",
+  "phone": "+1-555-2000",
+  "password": "SecurePass@123",
+  "specialtyIds": ["uuid-1", "uuid-2"]
+}
+```
+**Response:**
+```json
+{
+  "id": "employee-uuid",
+  "fullName": "Jane Smith",
+  "email": "jane.smith@beautycenter.com",
+  "phone": "+1-555-2000",
+  "isActive": true,
+  "role": "EMPLOYEE",
+  "specialties": [],
+  "createdAt": "2024-02-10T10:00:00Z",
+  "updatedAt": "2024-02-10T10:00:00Z"
+}
+```
+
+### GET `/api/admin/employees`
+**Description:** Get all employees with optional filters
+**Access:** ADMIN only
+**Headers:** `Authorization: Bearer {accessToken}`
+**Query Parameters:**
+- `isActive` (optional): Filter by active status (true/false)
+
+**Example:** `/api/admin/employees?isActive=true`
+
+**Response:**
+```json
+[
+  {
+    "id": "employee-uuid",
+    "fullName": "Jane Smith",
+    "email": "jane.smith@beautycenter.com",
+    "phone": "+1-555-2000",
+    "isActive": true,
+    "role": "EMPLOYEE",
+    "specialties": [],
+    "createdAt": "2024-02-10T10:00:00Z",
+    "updatedAt": "2024-02-10T10:00:00Z"
+  }
+]
+```
+
+### GET `/api/admin/employees/{id}`
+**Description:** Get employee by ID
+**Access:** ADMIN only
+**Headers:** `Authorization: Bearer {accessToken}`
+**Response:** Same as employee object above
+
+### PUT `/api/admin/employees/{id}`
+**Description:** Update employee information (activate/deactivate, update details)
+**Access:** ADMIN only
+**Headers:** `Authorization: Bearer {accessToken}`
+**Request Body:**
+```json
+{
+  "fullName": "Jane Smith Updated",
+  "email": "jane.updated@beautycenter.com",
+  "phone": "+1-555-3000",
+  "isActive": false,
+  "specialtyIds": ["uuid-1"]
+}
+```
+**Response:**
+```json
+{
+  "id": "employee-uuid",
+  "fullName": "Jane Smith Updated",
+  "email": "jane.updated@beautycenter.com",
+  "phone": "+1-555-3000",
+  "isActive": false,
+  "role": "EMPLOYEE",
+  "specialties": [],
+  "createdAt": "2024-02-10T10:00:00Z",
+  "updatedAt": "2024-02-10T11:30:00Z"
+}
+```
+
+### GET `/api/admin/employees/{id}/working-times`
+**Description:** Get employee's weekly working schedule
+**Access:** ADMIN only
+**Headers:** `Authorization: Bearer {accessToken}`
+**Response:**
+```json
+[
+  {
+    "id": "slot-uuid-1",
+    "employeeId": "employee-uuid",
+    "dayOfWeek": "MON",
+    "startTime": "09:00:00",
+    "endTime": "17:00:00",
+    "createdAt": "2024-02-10T10:00:00Z",
+    "updatedAt": "2024-02-10T10:00:00Z"
+  },
+  {
+    "id": "slot-uuid-2",
+    "employeeId": "employee-uuid",
+    "dayOfWeek": "TUE",
+    "startTime": "09:00:00",
+    "endTime": "17:00:00",
+    "createdAt": "2024-02-10T10:00:00Z",
+    "updatedAt": "2024-02-10T10:00:00Z"
+  }
+]
+```
+
+### PUT `/api/admin/employees/{id}/working-times`
+**Description:** Replace employee's full weekly schedule (deletes existing, creates new)
+**Access:** ADMIN only
+**Headers:** `Authorization: Bearer {accessToken}`
+**Request Body:**
+```json
+[
+  {
+    "dayOfWeek": "MON",
+    "startTime": "09:00:00",
+    "endTime": "17:00:00"
+  },
+  {
+    "dayOfWeek": "TUE",
+    "startTime": "09:00:00",
+    "endTime": "17:00:00"
+  },
+  {
+    "dayOfWeek": "WED",
+    "startTime": "10:00:00",
+    "endTime": "18:00:00"
+  }
+]
+```
+**Validation:**
+- `endTime` must be after `startTime`
+- No overlapping time slots on the same day
+- Valid day of week: MON, TUE, WED, THU, FRI, SAT, SUN
+
+**Response:** Array of created working time slots (same format as GET)
+
+### GET `/api/admin/employees/{id}/absences`
+**Description:** Get employee's absences (vacations, time off)
+**Access:** ADMIN only
+**Headers:** `Authorization: Bearer {accessToken}`
+**Response:**
+```json
+[
+  {
+    "id": "absence-uuid",
+    "employeeId": "employee-uuid",
+    "startAt": "2024-02-15T00:00:00Z",
+    "endAt": "2024-02-20T23:59:59Z",
+    "reason": "Vacation",
+    "createdAt": "2024-02-10T10:00:00Z",
+    "updatedAt": "2024-02-10T10:00:00Z"
+  }
+]
+```
+
+### POST `/api/admin/employees/{id}/absences`
+**Description:** Create absence for employee
+**Access:** ADMIN only
+**Headers:** `Authorization: Bearer {accessToken}`
+**Request Body:**
+```json
+{
+  "startAt": "2024-02-15T00:00:00Z",
+  "endAt": "2024-02-20T23:59:59Z",
+  "reason": "Vacation"
+}
+```
+**Validation:**
+- `endAt` must be after `startAt`
+- Cannot overlap with existing absences
+- Cannot create if confirmed appointments exist during period (MVP: blocks creation)
+
+**Response:**
+```json
+{
+  "id": "absence-uuid",
+  "employeeId": "employee-uuid",
+  "startAt": "2024-02-15T00:00:00Z",
+  "endAt": "2024-02-20T23:59:59Z",
+  "reason": "Vacation",
+  "createdAt": "2024-02-10T10:00:00Z",
+  "updatedAt": "2024-02-10T10:00:00Z"
+}
+```
+
+### DELETE `/api/admin/absences/{absenceId}`
+**Description:** Delete employee absence
+**Access:** ADMIN only
+**Headers:** `Authorization: Bearer {accessToken}`
+**Response:** 204 No Content
 
 ---
 

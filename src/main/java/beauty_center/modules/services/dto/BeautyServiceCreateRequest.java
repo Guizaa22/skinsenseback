@@ -9,6 +9,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.util.List;
+import java.util.UUID;
 
 /**
  * Beauty service creation request DTO
@@ -31,5 +33,14 @@ public class BeautyServiceCreateRequest {
     @NotNull(message = "Price is required")
     @Min(value = 0, message = "Price must be positive")
     private BigDecimal price;
+
+    // Optional specialty ID
+    private UUID specialtyId;
+
+    // Optional list of allowed employee IDs
+    private List<UUID> allowedEmployeeIds;
+
+    // Optional isActive flag (defaults to true)
+    private Boolean isActive;
 
 }
