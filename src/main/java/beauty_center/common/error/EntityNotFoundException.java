@@ -1,8 +1,11 @@
 package beauty_center.common.error;
 
+import lombok.Getter;
+
 /**
  * Thrown when a requested entity is not found (404 Not Found)
  */
+@Getter
 public class EntityNotFoundException extends RuntimeException {
 
     private final String entityType;
@@ -20,11 +23,4 @@ public class EntityNotFoundException extends RuntimeException {
         this.entityId = null;
     }
 
-    public String getEntityType() {
-        return entityType;
-    }
-
-    public Object getEntityId() {
-        return entityId;
-    }
 }

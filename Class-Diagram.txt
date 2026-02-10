@@ -1,0 +1,310 @@
+@startuml
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+
+'========================
+' Enums
+'========================
+enum AppointmentStatus {
+  CONFIRMED
+  CANCELED
+  COMPLETED
+}
+
+enum NotificationChannel {
+  EMAIL
+  SMS
+}
+
+enum NotificationType {
+  BOOKING_CONFIRMATION
+  REMINDER_24H
+  REMINDER_2H
+}
+
+enum NotificationStatus {
+  SCHEDULED
+  SENT
+  FAILED
+  CANCELED
+}
+
+enum StaffRole {
+  ADMIN
+  EMPLOYEE
+}
+
+enum DayOfWeek {
+  MON
+  TUE
+  WED
+  THU
+  FRI
+  SAT
+  SUN
+}
+
+'========================
+' UI Apps (high-level)
+'========================
+package "Client Web App" {
+  class ClientWebApp <<UI>>
+}
+
+package "Admin/Staff Desktop App" {
+  class AdminDesktopApp <<UI>>
+}
+
+'========================
+' Backend (API + Domain)
+'========================
+package "Backend" {
+
+  package "Domain (Entities)" {
+
+    abstract class UserAccount {
+      +id: UUID
+      +fullName: String
+      +email: String
+      +phone: String
+      +passwordHash: String
+      +isActive: Boolean
+      +createdAt: DateTime
+      +updatedAt: DateTime
+    }
+
+    class Client
+    class Staff {
+      +role: StaffRole
+    }
+    class Employee
+    class Admin
+
+    UserAccount <|-- Client
+    UserAccount <|-- Staff
+    Staff <|-- Employee
+    Staff <|-- Admin
+
+    class Specialty {
+      +id: UUID
+      +name: String
+      +description: String
+    }
+
+    class BeautyService {
+      +id: UUID
+      +name: String
+      +description: String
+      +durationMin: int
+      +price: Decimal
+      +isActive: Boolean
+    }
+
+    class WorkingTimeSlot {
+      +id: UUID
+      +day: DayOfWeek
+      +startTime: Time
+      +endTime: Time
+    }
+
+    class Absence {
+      +id: UUID
+      +startAt: DateTime
+      +endAt: DateTime
+      +reason: String
+    }
+
+    class Appointment {
+      +id: UUID
+      +startAt: DateTime
+      +endAt: DateTime
+      +status: AppointmentStatus
+      +createdAt: DateTime
+      +updatedAt: DateTime
+      +cancellationReason: String
+    }
+
+    class ClientConsent {
+      +id: UUID
+      +smsOptIn: Boolean
+      +smsUnsubToken: String
+      +updatedAt: DateTime
+    }
+
+    class ClientFile {
+      +id: UUID
+      +createdAt: DateTime
+      +updatedAt: DateTime
+      +photoConsentForFollowUp: Boolean
+      +photoConsentForMarketing: Boolean
+    }
+
+    class ClientIntake {
+      +howDidYouHearAboutUs: String
+      +consultationReason: String
+      +objective: String
+      +careType: String
+      +skincareRoutine: String
+      +habits: String
+    }
+
+    class MedicalHistory {
+      +medicalBackground: String
+      +currentTreatments: String
+      +allergiesReactions: String
+    }
+
+    class AestheticProcedureHistory {
+      +procedures: String
+    }
+
+    class ProfessionalNote {
+      +id: UUID
+      +createdAt: DateTime
+      +diagnostic: String
+      +phototype: String
+      +carePerformed: String
+      +productsAndParameters: String
+      +reactions: String
+      +recommendations: String
+      +nextAppointmentSuggestion: String
+    }
+
+    class NotificationMessage {
+      +id: UUID
+      +type: NotificationType
+      +channel: NotificationChannel
+      +recipient: String
+      +scheduledAt: DateTime
+      +sentAt: DateTime
+      +status: NotificationStatus
+      +providerMessageId: String
+    }
+
+    class NotificationRule {
+      +id: UUID
+      +type: NotificationType
+      +channel: NotificationChannel
+      +offsetHours: int
+      +isEnabled: Boolean
+    }
+
+    class AuditEntry {
+      +id: UUID
+      +entityType: String
+      +entityId: UUID
+      +action: String
+      +at: DateTime
+      +beforeJson: Text
+      +afterJson: Text
+      +ipAddress: String
+    }
+
+    '========================
+    ' Relationships
+    '========================
+
+    ' Employees and their skills/services
+    Employee "0..*" -- "0..*" Specialty : has >
+    BeautyService "0..1" --> Specialty : requires >
+    BeautyService "0..*" -- "0..*" Employee : allowedEmployees >
+
+    ' Working time + absences
+    Employee "1" o-- "1..*" WorkingTimeSlot : worksOn >
+    Employee "1" o-- "0..*" Absence : has >
+
+    ' Appointment core links
+    Appointment "1" --> Client : bookedBy >
+    Appointment "1" --> Employee : with >
+    Appointment "1" --> BeautyService : for >
+
+    ' ✅ Professional notes: belong to exactly ONE appointment, can be many per appointment
+    Appointment "1" o-- "0..*" ProfessionalNote : notes >
+    ' ✅ Accountability: note authored by exactly ONE employee
+    ProfessionalNote "1" --> Employee : authoredBy >
+
+    ' Client file (dossier)
+    Client "1" o-- "0..1" ClientFile
+    ClientFile "1" o-- "1" ClientIntake
+    ClientFile "1" o-- "1" MedicalHistory
+    ClientFile "1" o-- "1" AestheticProcedureHistory
+
+    ' Consent for notifications (SMS opt-in etc.)
+    Client "1" o-- "1" ClientConsent
+
+    ' Notifications tied to appointment/client
+    NotificationMessage "0..*" --> Client : about >
+    NotificationMessage "0..*" --> Appointment : for >
+    NotificationRule "0..*" --> BeautyService : optionalScope >
+
+    ' Auditing
+    AuditEntry "0..*" --> UserAccount : actor >
+  }
+
+  package "Application Layer" {
+
+    class AuthController <<controller>>
+    class ServiceController <<controller>>
+    class EmployeeController <<controller>>
+    class AppointmentController <<controller>>
+    class ClientFileController <<controller>>
+    class NotificationController <<controller>>
+    class AuditController <<controller>>
+
+    class BookingService <<service>>
+    class SchedulingService <<service>>
+    class NotificationService <<service>>
+    class AuditService <<service>>
+
+    interface AppointmentRepository <<repository>>
+    interface EmployeeRepository <<repository>>
+    interface ServiceRepository <<repository>>
+    interface ClientRepository <<repository>>
+    interface ClientFileRepository <<repository>>
+    interface NotificationRepository <<repository>>
+    interface AuditRepository <<repository>>
+
+    ' Controllers -> Services
+    ServiceController --> BookingService
+    EmployeeController --> SchedulingService
+    AppointmentController --> BookingService
+    ClientFileController --> BookingService
+    NotificationController --> NotificationService
+    AuditController --> AuditService
+    AuthController --> AuditService
+
+    ' Services -> Repos
+    BookingService --> AppointmentRepository
+    BookingService --> ClientRepository
+    BookingService --> EmployeeRepository
+    BookingService --> ServiceRepository
+    BookingService --> ClientFileRepository
+    BookingService --> AuditService
+
+    SchedulingService --> EmployeeRepository
+    SchedulingService --> AppointmentRepository
+
+    NotificationService --> NotificationRepository
+    NotificationService --> AppointmentRepository
+    NotificationService --> ClientRepository
+    NotificationService --> AuditService
+
+    AuditService --> AuditRepository
+  }
+}
+
+'========================
+' UI -> Backend deps
+'========================
+ClientWebApp ..> AuthController : REST/HTTPS
+ClientWebApp ..> AppointmentController
+ClientWebApp ..> ClientFileController
+
+AdminDesktopApp ..> AuthController : REST/HTTPS
+AdminDesktopApp ..> ServiceController
+AdminDesktopApp ..> EmployeeController
+AdminDesktopApp ..> AppointmentController
+AdminDesktopApp ..> NotificationController
+AdminDesktopApp ..> AuditController
+
+@enduml

@@ -4,76 +4,129 @@ import beauty_center.common.api.ApiResponse;
 import beauty_center.modules.auth.dto.LoginRequest;
 import beauty_center.modules.auth.dto.LoginResponse;
 import beauty_center.modules.auth.dto.RefreshRequest;
+import beauty_center.modules.auth.dto.UserPrincipalDto;
+import beauty_center.modules.auth.service.AuthService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
 
 /**
  * Authentication controller handling login, logout, and token refresh.
+ * All endpoints return standardized ApiResponse wrapper.
  */
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/api/auth")
 @RequiredArgsConstructor
+@Slf4j
 public class AuthController {
 
+    private final AuthService authService;
+
     /**
-     * Login endpoint - authenticate user and return JWT tokens
+     * Login endpoint - authenticate user and return JWT tokens.
+     * Public endpoint (no authentication required).
      *
      * @param request Login credentials (email + password)
-     * @return AccessToken and RefreshToken
+     * @return LoginResponse with accessToken, refreshToken, and expiresIn
+     * @throws AuthenticationException if credentials invalid
      */
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<LoginResponse>> login(@Valid @RequestBody LoginRequest request) {
-        // TODO: Authenticate user with email and password
-        // TODO: Validate credentials against database
-        // TODO: Generate access token + refresh token
-        // TODO: Return response with tokens
+        log.info("Login request for email: {}", request.getEmail());
 
-        LoginResponse response = LoginResponse.builder()
-            .accessToken("TODO_ACCESS_TOKEN")
-            .refreshToken("TODO_REFRESH_TOKEN")
-            .expiresIn(3600)
-            .build();
+        try {
+            LoginResponse response = authService.login(request);
+            log.info("User logged in successfully: {}", request.getEmail());
 
-        return ResponseEntity.ok(ApiResponse.ok(response, "Login successful"));
+            return ResponseEntity.ok(
+                ApiResponse.ok(response, "Login successful")
+            );
+        } catch (AuthenticationException e) {
+            log.warn("Login failed for email: {}", request.getEmail());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.error("Invalid email or password", HttpStatus.UNAUTHORIZED.value()));
+        } catch (Exception e) {
+            log.error("Login error for email: {}", request.getEmail(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.error("Login failed", HttpStatus.INTERNAL_SERVER_ERROR.value()));
+        }
     }
 
     /**
-     * Refresh token endpoint - get new access token using refresh token
+     * Get current authenticated user details.
+     * Requires authentication (any authenticated user).
      *
-     * @param request Refresh token
-     * @return New AccessToken
+     * @return UserPrincipalDto with current user information
+     */
+    @GetMapping("/me")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<UserPrincipalDto>> getCurrentUser() {
+        log.debug("Fetching current user details");
+
+        try {
+            UserPrincipalDto user = authService.getCurrentUser();
+            return ResponseEntity.ok(
+                ApiResponse.ok(user, "User details retrieved successfully")
+            );
+        } catch (IllegalArgumentException e) {
+            log.warn("Could not retrieve current user: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error("User not found", HttpStatus.NOT_FOUND.value()));
+        }
+    }
+
+    /**
+     * Refresh token endpoint - get new access token using refresh token.
+     * Public endpoint (no authentication required for refresh token).
+     *
+     * @param request Refresh token request
+     * @return LoginResponse with new accessToken
      */
     @PostMapping("/refresh")
     public ResponseEntity<ApiResponse<LoginResponse>> refresh(@Valid @RequestBody RefreshRequest request) {
-        // TODO: Validate refresh token
-        // TODO: Extract user from refresh token
-        // TODO: Generate new access token
-        // TODO: Return new token
+        log.debug("Refresh token request");
 
-        LoginResponse response = LoginResponse.builder()
-            .accessToken("TODO_NEW_ACCESS_TOKEN")
-            .refreshToken(request.getRefreshToken())
-            .expiresIn(3600)
-            .build();
+        try {
+            LoginResponse response = authService.refreshToken(request.getRefreshToken());
+            log.debug("Token refreshed successfully");
 
-        return ResponseEntity.ok(ApiResponse.ok(response, "Token refreshed"));
+            return ResponseEntity.ok(
+                ApiResponse.ok(response, "Token refreshed successfully")
+            );
+        } catch (IllegalArgumentException e) {
+            log.warn("Refresh token failed: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.error("Invalid or expired refresh token", HttpStatus.UNAUTHORIZED.value()));
+        }
     }
 
     /**
-     * Logout endpoint - invalidate tokens
+     * Logout endpoint - invalidate tokens.
+     * Requires authentication (any authenticated user).
      *
      * @return Success message
      */
     @PostMapping("/logout")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<Void>> logout() {
-        // TODO: Invalidate refresh token in database if needed
-        // TODO: Clear security context
+        log.info("Logout request from user");
 
-        return ResponseEntity.ok(ApiResponse.ok(null, "Logout successful"));
+        try {
+            authService.logout();
+            return ResponseEntity.ok(
+                ApiResponse.ok(null, "Logout successful")
+            );
+        } catch (Exception e) {
+            log.error("Logout error", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.error("Logout failed", HttpStatus.INTERNAL_SERVER_ERROR.value()));
+        }
     }
 
 }

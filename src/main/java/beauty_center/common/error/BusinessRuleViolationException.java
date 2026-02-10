@@ -1,9 +1,12 @@
 package beauty_center.common.error;
 
+import lombok.Getter;
+
 /**
  * Thrown when a business rule violation occurs (409 Conflict)
  * Examples: appointment overlap, invalid state transition, duplicate resource, etc.
  */
+@Getter
 public class BusinessRuleViolationException extends RuntimeException {
 
     private final String errorCode;
@@ -18,7 +21,4 @@ public class BusinessRuleViolationException extends RuntimeException {
         this.errorCode = "BUSINESS_RULE_VIOLATION";
     }
 
-    public String getErrorCode() {
-        return errorCode;
-    }
 }

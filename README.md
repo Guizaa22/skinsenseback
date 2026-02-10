@@ -7,20 +7,20 @@ Production-ready Spring Boot 3.5.x backend for Beauty Center management system.
 - Java 17+
 - Maven 3.8+
 - Docker & Docker Compose
-- PostgreSQL 17 (via Docker)
+- PostgreSQL 16.11 (via Docker)
 
 ## Quick Start
 
 ### 1. Start PostgreSQL Database
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 This will start PostgreSQL on `localhost:5432` with:
-- Database: `beauty_center`
-- User: `beauty`
-- Password: `beauty`
+- Database: `beauty_center_db`
+- User: `postgres`
+- Password: `mouadhmb12`
 
 Verify with:
 ```bash
@@ -46,9 +46,9 @@ API Docs JSON: `http://localhost:8080/v3/api-docs`
 All configuration is environment-based via `application.yml`:
 
 ```bash
-export SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/beauty_center
-export SPRING_DATASOURCE_USERNAME=beauty
-export SPRING_DATASOURCE_PASSWORD=beauty
+export SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/beauty_center_db
+export SPRING_DATASOURCE_USERNAME=postgres
+export SPRING_DATASOURCE_PASSWORD=mouadhmb12
 export JWT_SECRET=your-secret-key-minimum-32-characters
 export JWT_EXP_MINUTES=60
 export JWT_REFRESH_EXP_DAYS=7
@@ -95,7 +95,7 @@ src/main/java/beauty_center/
 
 ## Database
 
-- PostgreSQL 17
+- PostgreSQL 16.11
 - Flyway migrations in `src/main/resources/db/migration/`
 - JPA/Hibernate ORM
 - UUID primary keys

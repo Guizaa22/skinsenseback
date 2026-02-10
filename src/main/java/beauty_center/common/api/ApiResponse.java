@@ -39,7 +39,7 @@ public class ApiResponse<T> {
             .build();
     }
 
-    public static <T> ApiResponse<T> error(String message) {
+    public static <T> ApiResponse<T> error(String message, int value) {
         return ApiResponse.<T>builder()
             .success(false)
             .message(message)

@@ -1,9 +1,12 @@
 package beauty_center.common.error;
 
+import lombok.Getter;
+
 /**
  * Thrown when request validation fails (400 Bad Request)
  * More specific than IllegalArgumentException for API validation scenarios.
  */
+@Getter
 public class ValidationException extends RuntimeException {
 
     private final String fieldName;
@@ -21,11 +24,4 @@ public class ValidationException extends RuntimeException {
         this.rejectedValue = null;
     }
 
-    public String getFieldName() {
-        return fieldName;
-    }
-
-    public Object getRejectedValue() {
-        return rejectedValue;
-    }
 }

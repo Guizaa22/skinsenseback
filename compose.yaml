@@ -1,23 +1,35 @@
 version: '3.9'
 
 services:
-  postgres:
-    image: postgres:16.11-alpine
+  db:
+    image: postgres:16.11
     container_name: beauty_center_postgres
+    restart: unless-stopped
+
     environment:
-      POSTGRES_DB: beauty_center_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: mouadhmb12
+      POSTGRES_DB: ${POSTGRES_DB:-beauty_center_db}
+      POSTGRES_USER: ${SPRING_DATASOURCE_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-mouadhmb12}
+
     ports:
       - "5432:5432"
+
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - db_data:/var/lib/postgresql/data
+
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U ${SPRING_DATASOURCE_USERNAME:-postgres}"]
       interval: 10s
       timeout: 5s
       retries: 5
 
+  mailhog:
+    image: mailhog/mailhog:latest
+    restart: unless-stopped
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
 volumes:
-  postgres_data:
+  db_data:
     driver: local
