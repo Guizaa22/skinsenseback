@@ -1,5 +1,6 @@
 package beauty_center.common.error;
 
+import beauty_center.modules.appointments.service.BookingService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -106,6 +107,27 @@ public class GlobalExceptionHandler {
             .message(ex.getMessage())
             .error("CONFLICT")
             .errorCode(ex.getErrorCode())
+            .timestamp(OffsetDateTime.now())
+            .path(request.getRequestURI())
+            .build();
+
+        return ResponseEntity
+            .status(HttpStatus.CONFLICT)
+            .body(apiError);
+    }
+
+    @ExceptionHandler(BookingService.AppointmentConflictException.class)
+    public ResponseEntity<ApiError> handleAppointmentConflictException(
+            BookingService.AppointmentConflictException ex,
+            HttpServletRequest request) {
+
+        log.warn("Appointment conflict: {}", ex.getMessage());
+
+        ApiError apiError = ApiError.builder()
+            .status(HttpStatus.CONFLICT.value())
+            .message(ex.getMessage())
+            .error("CONFLICT")
+            .errorCode("APPOINTMENT_CONFLICT")
             .timestamp(OffsetDateTime.now())
             .path(request.getRequestURI())
             .build();

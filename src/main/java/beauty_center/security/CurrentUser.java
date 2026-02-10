@@ -1,11 +1,15 @@
 package beauty_center.security;
 
+import beauty_center.modules.users.entity.UserAccount;
+import beauty_center.modules.users.repository.UserAccountRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
+import java.util.UUID;
 
 /**
  * Helper component to retrieve current authenticated user from SecurityContext.
@@ -13,7 +17,10 @@ import java.util.Collection;
  * All methods safely handle null authentication.
  */
 @Component
+@RequiredArgsConstructor
 public class CurrentUser {
+
+    private final UserAccountRepository userAccountRepository;
 
     /**
      * Get current authenticated username (email).
@@ -23,6 +30,22 @@ public class CurrentUser {
     public String getUsername() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         return authentication != null ? authentication.getName() : null;
+    }
+
+    /**
+     * Get current authenticated user's ID.
+     *
+     * @return User UUID or null if not authenticated
+     */
+    public UUID getUserId() {
+        String email = getUsername();
+        if (email == null) {
+            return null;
+        }
+
+        return userAccountRepository.findByEmail(email)
+                .map(UserAccount::getId)
+                .orElse(null);
     }
 
     /**

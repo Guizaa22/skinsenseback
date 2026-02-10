@@ -459,16 +459,23 @@ All employee management endpoints require **ADMIN** role.
 
 ## 📅 Appointments
 
+All appointment endpoints implement role-based access control:
+- **CLIENT**: Can view own appointments, create appointments for themselves, cancel own appointments
+- **EMPLOYEE**: Can view own calendar, update/reschedule appointments, complete appointments
+- **ADMIN**: Full access to all appointments and operations
+
 ### GET `/api/appointments`
-**Description:** Get appointments with filters (client/employee/status)
+**Description:** Get appointments with filters (role-based filtering applied automatically)
 **Access:** Authenticated users
 **Headers:** `Authorization: Bearer {accessToken}`
 **Query Parameters:**
-- `clientId` (optional): Filter by client UUID
-- `employeeId` (optional): Filter by employee UUID
+- `clientId` (optional): Filter by client UUID (ADMIN only, ignored for CLIENT/EMPLOYEE)
+- `employeeId` (optional): Filter by employee UUID (ADMIN only, auto-set for EMPLOYEE)
 - `status` (optional): CONFIRMED, CANCELED, COMPLETED
-- `from` (optional): Start date (ISO 8601)
-- `to` (optional): End date (ISO 8601)
+- `from` (optional): Start date/time (ISO 8601 with timezone)
+- `to` (optional): End date/time (ISO 8601 with timezone)
+
+**Example:** `/api/appointments?status=CONFIRMED&from=2024-02-15T00:00:00Z&to=2024-02-20T23:59:59Z`
 
 **Response:**
 ```json
@@ -477,14 +484,16 @@ All employee management endpoints require **ADMIN** role.
   "message": "Appointments retrieved successfully",
   "data": [
     {
-      "id": "uuid-here",
+      "id": "550e8400-e29b-41d4-a716-446655440000",
       "clientId": "client-uuid",
       "employeeId": "employee-uuid",
       "serviceId": "service-uuid",
-      "startAt": "2024-02-15T14:00:00Z",
-      "endAt": "2024-02-15T15:00:00Z",
+      "startAt": "2024-02-15T14:00:00+01:00",
+      "endAt": "2024-02-15T15:00:00+01:00",
       "status": "CONFIRMED",
-      "notes": "First time client"
+      "cancellationReason": null,
+      "createdAt": "2024-02-10T10:00:00+01:00",
+      "updatedAt": "2024-02-10T10:00:00+01:00"
     }
   ]
 }
@@ -500,80 +509,144 @@ All employee management endpoints require **ADMIN** role.
   "success": true,
   "message": "Appointment retrieved successfully",
   "data": {
-    "id": "uuid-here",
-    "client": {
-      "id": "client-uuid",
-      "fullName": "John Doe",
-      "email": "client@beautycenter.com"
-    },
-    "employee": {
-      "id": "employee-uuid",
-      "fullName": "Jane Smith"
-    },
-    "service": {
-      "id": "service-uuid",
-      "name": "Facial Treatment",
-      "price": 85.00
-    },
-    "startAt": "2024-02-15T14:00:00Z",
-    "endAt": "2024-02-15T15:00:00Z",
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "clientId": "client-uuid",
+    "employeeId": "employee-uuid",
+    "serviceId": "service-uuid",
+    "startAt": "2024-02-15T14:00:00+01:00",
+    "endAt": "2024-02-15T15:00:00+01:00",
     "status": "CONFIRMED",
-    "notes": "First time client"
+    "cancellationReason": null,
+    "createdAt": "2024-02-10T10:00:00+01:00",
+    "updatedAt": "2024-02-10T10:00:00+01:00"
   }
 }
 ```
 
 ### POST `/api/appointments`
-**Description:** Create new appointment with availability validation
+**Description:** Create new appointment with availability validation and conflict detection
 **Access:** Authenticated users
 **Headers:** `Authorization: Bearer {accessToken}`
 **Request Body:**
 ```json
 {
   "clientId": "client-uuid",
-  "employeeId": "employee-uuid",
   "serviceId": "service-uuid",
-  "startAt": "2024-02-15T14:00:00Z",
-  "endAt": "2024-02-15T15:00:00Z",
+  "employeeId": "employee-uuid",
+  "startAt": "2024-02-15T14:00:00+01:00",
   "notes": "First time client"
 }
 ```
-**Response:**
+**Notes:**
+- `clientId` is optional. If not provided, uses current user's ID (for CLIENT role)
+- Only ADMIN can specify a different `clientId` to book for another client
+- `endAt` is calculated automatically based on service duration
+- Returns 409 Conflict if slot is not available or overlaps with existing appointment
+
+**Success Response (201 Created):**
 ```json
 {
   "success": true,
-  "message": "Appointment created",
+  "message": "Appointment created successfully",
   "data": {
-    "id": "new-uuid",
+    "id": "new-appointment-uuid",
+    "clientId": "client-uuid",
+    "employeeId": "employee-uuid",
+    "serviceId": "service-uuid",
+    "startAt": "2024-02-15T14:00:00+01:00",
+    "endAt": "2024-02-15T15:00:00+01:00",
     "status": "CONFIRMED",
-    ...
+    "cancellationReason": null,
+    "createdAt": "2024-02-15T13:00:00+01:00",
+    "updatedAt": "2024-02-15T13:00:00+01:00"
   }
 }
 ```
 
-### PUT `/api/appointments/{id}`
-**Description:** Update existing appointment
-**Access:** Authenticated users (own appointments or ADMIN/EMPLOYEE)
-**Headers:** `Authorization: Bearer {accessToken}`
-**Request Body:** Same as POST
-**Response:**
+**Conflict Response (409 Conflict):**
 ```json
 {
-  "success": true,
-  "message": "Appointment updated",
-  "data": { ... }
+  "success": false,
+  "message": "Appointment slot is not available or conflicts with existing appointment",
+  "errorCode": 409,
+  "timestamp": "2024-02-15T13:00:00+01:00"
 }
 ```
 
-### PATCH `/api/appointments/{id}/cancel`
-**Description:** Cancel appointment
-**Access:** Authenticated users (own appointments or ADMIN/EMPLOYEE)
+### PUT `/api/appointments/{id}`
+**Description:** Update/reschedule existing appointment
+**Access:** ADMIN or EMPLOYEE only
 **Headers:** `Authorization: Bearer {accessToken}`
+**Request Body:**
+```json
+{
+  "employeeId": "employee-uuid",
+  "serviceId": "service-uuid",
+  "startAt": "2024-02-16T10:00:00+01:00"
+}
+```
+**Notes:**
+- Cannot update COMPLETED or CANCELED appointments
+- Returns 409 Conflict if new slot is not available
+- `endAt` is recalculated based on service duration
+
 **Response:**
 ```json
 {
   "success": true,
-  "message": "Appointment canceled",
+  "message": "Appointment rescheduled successfully",
+  "data": {
+    "id": "appointment-uuid",
+    "clientId": "client-uuid",
+    "employeeId": "employee-uuid",
+    "serviceId": "service-uuid",
+    "startAt": "2024-02-16T10:00:00+01:00",
+    "endAt": "2024-02-16T11:00:00+01:00",
+    "status": "CONFIRMED",
+    "cancellationReason": null,
+    "createdAt": "2024-02-10T10:00:00+01:00",
+    "updatedAt": "2024-02-15T14:30:00+01:00"
+  }
+}
+```
+
+### POST `/api/appointments/{id}/cancel`
+**Description:** Cancel appointment with reason
+**Access:** Authenticated users (own appointments or ADMIN/EMPLOYEE)
+**Headers:** `Authorization: Bearer {accessToken}`
+**Request Body:**
+```json
+{
+  "cancellationReason": "Client requested reschedule"
+}
+```
+**Notes:**
+- CLIENT can cancel own appointments
+- EMPLOYEE and ADMIN can cancel any appointment
+- Cannot cancel already COMPLETED or CANCELED appointments
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Appointment canceled successfully",
+  "data": null
+}
+```
+
+### POST `/api/appointments/{id}/complete`
+**Description:** Mark appointment as completed
+**Access:** ADMIN or EMPLOYEE only
+**Headers:** `Authorization: Bearer {accessToken}`
+**Notes:**
+- Can only complete CONFIRMED appointments
+- Cannot complete CANCELED appointments
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Appointment marked as completed",
   "data": null
 }
 ```
@@ -582,54 +655,89 @@ All employee management endpoints require **ADMIN** role.
 
 ## 🗓️ Scheduling & Availability
 
-### GET `/api/scheduling/availability/{employeeId}`
-**Description:** Check employee availability for a time slot
+### GET `/api/availability`
+**Description:** Get available time slots for an employee and service
 **Access:** Authenticated users
 **Headers:** `Authorization: Bearer {accessToken}`
 **Query Parameters:**
-- `startAt` (required): Start time (ISO 8601)
-- `endAt` (required): End time (ISO 8601)
+- `employeeId` (required): UUID of the employee
+- `serviceId` (required): UUID of the service
+- `date` (required): Start date in ISO format (YYYY-MM-DD)
+- `days` (optional): Number of days to check (default: 1, min: 1, max: 30)
 
-**Example:** `/api/scheduling/availability/employee-uuid?startAt=2024-02-15T14:00:00Z&endAt=2024-02-15T15:00:00Z`
+**Example:** `/api/availability?employeeId=550e8400-e29b-41d4-a716-446655440000&serviceId=660e8400-e29b-41d4-a716-446655440001&date=2024-02-15&days=7`
+
+**Algorithm:**
+- Calculates available slots based on employee's weekly working schedule
+- Excludes time slots during employee absences
+- Excludes time slots overlapping with existing CONFIRMED appointments
+- Ignores CANCELED appointments (they don't block availability)
+- Uses 15-minute granularity for slot generation
+- Validates that service is active and exists
+- Returns slots within working hours only
 
 **Response:**
 ```json
 {
   "success": true,
-  "message": "Availability checked",
+  "message": "Availability retrieved successfully",
   "data": {
-    "available": true,
-    "employeeId": "employee-uuid",
-    "requestedSlot": {
-      "startAt": "2024-02-15T14:00:00Z",
-      "endAt": "2024-02-15T15:00:00Z"
-    }
+    "employeeId": "550e8400-e29b-41d4-a716-446655440000",
+    "serviceId": "660e8400-e29b-41d4-a716-446655440001",
+    "startDate": "2024-02-15",
+    "endDate": "2024-02-21",
+    "serviceDurationMinutes": 60,
+    "availableSlots": [
+      {
+        "startAt": "2024-02-15T09:00:00+01:00",
+        "endAt": "2024-02-15T10:00:00+01:00"
+      },
+      {
+        "startAt": "2024-02-15T09:15:00+01:00",
+        "endAt": "2024-02-15T10:15:00+01:00"
+      },
+      {
+        "startAt": "2024-02-15T10:00:00+01:00",
+        "endAt": "2024-02-15T11:00:00+01:00"
+      },
+      {
+        "startAt": "2024-02-16T09:00:00+01:00",
+        "endAt": "2024-02-16T10:00:00+01:00"
+      }
+    ]
   }
 }
 ```
 
-### GET `/api/scheduling/next-slot/{employeeId}`
-**Description:** Find next available time slot for employee
-**Access:** Authenticated users
-**Headers:** `Authorization: Bearer {accessToken}`
-**Query Parameters:**
-- `from` (optional): Start searching from this time (ISO 8601, defaults to now)
-- `durationMinutes` (optional): Duration needed (defaults to 60)
+**Error Responses:**
 
-**Example:** `/api/scheduling/next-slot/employee-uuid?from=2024-02-15T10:00:00Z&durationMinutes=90`
-
-**Response:**
+Service not found (400 Bad Request):
 ```json
 {
-  "success": true,
-  "message": "Next slot found",
-  "data": {
-    "employeeId": "employee-uuid",
-    "nextAvailableSlot": {
-      "startAt": "2024-02-15T14:00:00Z",
-      "endAt": "2024-02-15T15:30:00Z"
-    }
-  }
+  "success": false,
+  "message": "Service not found: 660e8400-e29b-41d4-a716-446655440001",
+  "errorCode": 400,
+  "timestamp": "2024-02-15T10:00:00+01:00"
+}
+```
+
+Service inactive (400 Bad Request):
+```json
+{
+  "success": false,
+  "message": "Service is not active: 660e8400-e29b-41d4-a716-446655440001",
+  "errorCode": 400,
+  "timestamp": "2024-02-15T10:00:00+01:00"
+}
+```
+
+Invalid days parameter (400 Bad Request):
+```json
+{
+  "success": false,
+  "message": "Days parameter must be between 1 and 30",
+  "errorCode": 400,
+  "timestamp": "2024-02-15T10:00:00+01:00"
 }
 ```
 
@@ -847,12 +955,13 @@ All API responses follow a standardized format using the `ApiResponse` wrapper:
 
 | Code | Meaning | When Used |
 |------|---------|-----------|
-| **200** | OK | Successful GET, PUT, PATCH |
+| **200** | OK | Successful GET, PUT, PATCH, POST (non-creation) |
 | **201** | Created | Successful POST (resource created) |
 | **400** | Bad Request | Invalid request body or parameters |
 | **401** | Unauthorized | Missing or invalid authentication token |
 | **403** | Forbidden | Authenticated but insufficient permissions |
 | **404** | Not Found | Resource doesn't exist |
+| **409** | Conflict | Appointment booking conflict, overlapping time slots |
 | **500** | Internal Server Error | Server-side error |
 
 ---
@@ -882,18 +991,32 @@ curl -X GET http://localhost:8080/api/users/profile \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN_HERE"
 ```
 
+### Check Availability Example
+```bash
+curl -X GET "http://localhost:8080/api/availability?employeeId=550e8400-e29b-41d4-a716-446655440000&serviceId=660e8400-e29b-41d4-a716-446655440001&date=2024-02-15&days=7" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN_HERE"
+```
+
 ### Create Appointment Example
 ```bash
 curl -X POST http://localhost:8080/api/appointments \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN_HERE" \
   -H "Content-Type: application/json" \
   -d '{
-    "clientId": "client-uuid",
-    "employeeId": "employee-uuid",
-    "serviceId": "service-uuid",
-    "startAt": "2024-02-15T14:00:00Z",
-    "endAt": "2024-02-15T15:00:00Z",
+    "serviceId": "660e8400-e29b-41d4-a716-446655440001",
+    "employeeId": "550e8400-e29b-41d4-a716-446655440000",
+    "startAt": "2024-02-15T14:00:00+01:00",
     "notes": "First time client"
+  }'
+```
+
+### Cancel Appointment Example
+```bash
+curl -X POST http://localhost:8080/api/appointments/appointment-uuid/cancel \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "cancellationReason": "Client requested reschedule"
   }'
 ```
 
@@ -909,11 +1032,15 @@ curl -X POST http://localhost:8080/api/appointments \
 
 ## 📝 Notes
 
-- All timestamps use **ISO 8601 format** with timezone (e.g., `2024-02-15T14:00:00Z`)
+- All timestamps use **ISO 8601 format** with timezone (e.g., `2024-02-15T14:00:00+01:00` for Tunisia UTC+1)
 - All IDs are **UUIDs** (e.g., `550e8400-e29b-41d4-a716-446655440000`)
 - **JWT tokens expire** after 1 hour (3600 seconds)
 - **Refresh tokens** can be used to obtain new access tokens without re-login
-- Some endpoints are **TODO** (not fully implemented yet) - they return placeholder responses
+- **Appointment slots** use 15-minute granularity for availability calculation
+- **Timezone**: System uses Tunisia timezone (UTC+1) with OffsetDateTime
+- **Conflict handling**: Database-level GiST exclusion constraints prevent overlapping appointments
+- **Status transitions**: CONFIRMED → COMPLETED or CANCELED (cannot edit completed appointments)
+- **Canceled appointments** do not block availability slots
 
 ---
 

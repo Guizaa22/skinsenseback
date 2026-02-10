@@ -10,23 +10,20 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 /**
- * Appointment creation request DTO.
- * Client ID is determined from authenticated user context.
- * Admin can optionally specify clientId to book for another client.
+ * Request DTO for updating/rescheduling an appointment.
+ * Allows changing employee, service, or time slot.
  */
 @Data
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AppointmentCreateRequest {
-
-    private UUID clientId; // Optional: admin can book for specific client
-
-    @NotNull(message = "Service ID is required")
-    private UUID serviceId;
+@Builder
+public class AppointmentUpdateRequest {
 
     @NotNull(message = "Employee ID is required")
     private UUID employeeId;
+
+    @NotNull(message = "Service ID is required")
+    private UUID serviceId;
 
     @NotNull(message = "Start time is required")
     private OffsetDateTime startAt;
@@ -34,3 +31,4 @@ public class AppointmentCreateRequest {
     private String notes;
 
 }
+

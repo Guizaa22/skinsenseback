@@ -5,7 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 /**
@@ -21,10 +21,11 @@ public class AppointmentResponse {
     private UUID clientId;
     private UUID employeeId;
     private UUID serviceId;
-    private LocalDateTime startAt;
-    private LocalDateTime endAt;
+    private OffsetDateTime startAt;
+    private OffsetDateTime endAt;
     private String status;
     private String cancellationReason;
-    private LocalDateTime createdAt;
+    private OffsetDateTime createdAt;
+    private OffsetDateTime updatedAt;
 
 }

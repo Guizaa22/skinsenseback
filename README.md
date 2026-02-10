@@ -168,6 +168,63 @@ Complete implementation of employee management system with:
 - Role-based access control testing
 - Test coverage for business logic in services
 
+---
+
+### Section 5: Scheduling & Appointment Management ✅
+
+Complete implementation of availability calculation and appointment booking system:
+
+**5.1 Availability Calculation (SchedulingService):**
+- Deterministic algorithm for calculating available time slots
+- 15-minute slot granularity for precise scheduling
+- Considers employee weekly schedules, absences, and existing appointments
+- Multi-day availability queries (1-30 days)
+- Timezone-aware with OffsetDateTime (Tunisia UTC+1)
+- Filters out canceled appointments from availability calculation
+- Service duration validation and retrieval
+
+**5.2 Appointment Creation (BookingService):**
+- Transactional appointment booking with availability validation
+- Database-level conflict prevention using GiST exclusion constraints
+- Race condition handling with 409 Conflict responses
+- Automatic end time calculation based on service duration
+- Client, employee, and service existence validation
+- Comprehensive logging for debugging and audit trails
+
+**5.3 Appointment Management:**
+- Full CRUD operations with role-based access control
+- Status transitions: CONFIRMED → COMPLETED or CANCELED
+- Cancellation tracking with reason field
+- Reschedule functionality (ADMIN/EMPLOYEE only)
+- Complete appointment marking (EMPLOYEE/ADMIN only)
+- Filtering by client, employee, status, and date range
+- Access control: clients see own appointments, employees see own calendar, admins see all
+
+**Security & Access Control:**
+- `GET /api/availability` - Authenticated users (check availability)
+- `GET /api/appointments` - Role-based filtering (CLIENT: own, EMPLOYEE: calendar, ADMIN: all)
+- `POST /api/appointments` - Authenticated users (CLIENT: self-booking, ADMIN: book for others)
+- `PUT /api/appointments/{id}` - ADMIN/EMPLOYEE only (reschedule)
+- `POST /api/appointments/{id}/cancel` - Own appointments or ADMIN/EMPLOYEE
+- `POST /api/appointments/{id}/complete` - ADMIN/EMPLOYEE only
+
+**API Endpoints:**
+- `GET /api/availability` - Get available time slots for employee and service
+- `GET /api/appointments` - List appointments with filters
+- `GET /api/appointments/{id}` - Get appointment details
+- `POST /api/appointments` - Create new appointment
+- `PUT /api/appointments/{id}` - Update/reschedule appointment
+- `POST /api/appointments/{id}/cancel` - Cancel appointment
+- `POST /api/appointments/{id}/complete` - Mark appointment as completed
+
+**Testing:**
+- 17 comprehensive unit tests for AvailabilityService
+- Edge case coverage: boundary times, exact fit, overlaps, absences
+- Multi-day availability testing
+- Timezone handling verification
+- Canceled appointment filtering
+- Service validation (not found, inactive)
+
 See `API_ROUTES_DOCUMENTATION.md` for detailed API documentation.
 
 ---
