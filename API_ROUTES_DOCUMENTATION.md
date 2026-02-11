@@ -850,6 +850,245 @@ Invalid days parameter (400 Bad Request):
 
 ---
 
+## 📋 Client Files (Medical Dossier)
+
+**IMPORTANT:** Client files contain sensitive medical and personal information. All operations are logged to the audit trail for compliance.
+
+### GET `/api/client/me/file`
+**Description:** Get current client's own medical file (creates if doesn't exist)
+**Access:** CLIENT only
+**Headers:** `Authorization: Bearer {accessToken}`
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Client file retrieved successfully",
+  "data": {
+    "id": "file-uuid",
+    "clientId": "client-uuid",
+    "intake": {
+      "howDidYouHearAboutUs": "Google",
+      "consultationReason": "Acne treatment",
+      "objective": "Clear skin",
+      "careType": "Facial",
+      "skincareRoutine": "Morning cleanser, night moisturizer",
+      "habits": "Drinks 8 glasses of water daily"
+    },
+    "medicalHistory": {
+      "medicalBackground": "Healthy, no chronic conditions",
+      "currentTreatments": "None",
+      "allergiesAndReactions": "Penicillin, latex"
+    },
+    "aestheticProcedureHistory": {
+      "procedures": "Chemical peel (2023), microdermabrasion (2022)"
+    },
+    "photoConsentForFollowup": true,
+    "photoConsentForMarketing": false,
+    "createdAt": "2024-02-10T10:00:00+01:00",
+    "updatedAt": "2024-02-11T14:30:00+01:00"
+  }
+}
+```
+
+### PUT `/api/client/me/file`
+**Description:** Update current client's own medical file (client-provided data only)
+**Access:** CLIENT only
+**Headers:** `Authorization: Bearer {accessToken}`
+**Request Body:**
+```json
+{
+  "intake": {
+    "howDidYouHearAboutUs": "Instagram",
+    "consultationReason": "Anti-aging treatment",
+    "objective": "Reduce fine lines",
+    "careType": "Botox",
+    "skincareRoutine": "Retinol serum, SPF 50",
+    "habits": "Exercises 3x/week, no smoking"
+  },
+  "medicalHistory": {
+    "medicalBackground": "Hypertension (controlled)",
+    "currentTreatments": "Lisinopril 10mg daily",
+    "allergiesAndReactions": "Penicillin, aspirin"
+  },
+  "aestheticProcedureHistory": {
+    "procedures": "Botox forehead (2024), filler lips (2023)"
+  },
+  "photoConsentForFollowup": true,
+  "photoConsentForMarketing": false
+}
+```
+**Notes:**
+- All fields are optional (partial updates supported)
+- Only the client who owns the file can update it
+- Employees/Admins cannot modify client-provided data
+- All updates are logged to audit trail
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Client file updated successfully",
+  "data": {
+    "id": "file-uuid",
+    "clientId": "client-uuid",
+    "intake": { ... },
+    "medicalHistory": { ... },
+    "aestheticProcedureHistory": { ... },
+    "photoConsentForFollowup": true,
+    "photoConsentForMarketing": false,
+    "createdAt": "2024-02-10T10:00:00+01:00",
+    "updatedAt": "2024-02-11T15:00:00+01:00"
+  }
+}
+```
+
+### GET `/api/clients/{clientId}/file`
+**Description:** Get client file by ID (Employee/Admin read-only access)
+**Access:** EMPLOYEE or ADMIN only
+**Headers:** `Authorization: Bearer {accessToken}`
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Client file retrieved successfully",
+  "data": {
+    "id": "file-uuid",
+    "clientId": "client-uuid",
+    "intake": { ... },
+    "medicalHistory": { ... },
+    "aestheticProcedureHistory": { ... },
+    "photoConsentForFollowup": true,
+    "photoConsentForMarketing": false,
+    "createdAt": "2024-02-10T10:00:00+01:00",
+    "updatedAt": "2024-02-11T14:30:00+01:00"
+  }
+}
+```
+**Notes:**
+- Employees and admins can read any client's file
+- Access is logged to audit trail for compliance
+- Returns 404 if client file doesn't exist
+
+**Error Response (404 Not Found):**
+```json
+{
+  "success": false,
+  "message": "Client file not found for client: {clientId}",
+  "errorCode": 404,
+  "timestamp": "2024-02-11T15:00:00+01:00"
+}
+```
+
+---
+
+## 🔔 Client Consent (SMS Notifications)
+
+### GET `/api/client/me/consent`
+**Description:** Get current client's SMS notification consent preferences
+**Access:** CLIENT only
+**Headers:** `Authorization: Bearer {accessToken}`
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Consent preferences retrieved successfully",
+  "data": {
+    "id": "consent-uuid",
+    "clientId": "client-uuid",
+    "smsOptIn": true,
+    "smsUnsubToken": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "createdAt": "2024-02-10T10:00:00+01:00",
+    "updatedAt": "2024-02-10T10:00:00+01:00"
+  }
+}
+```
+**Notes:**
+- Consent is created automatically on first access with default opt-in
+- Unsubscribe token is auto-generated (UUID format)
+- Token persists across consent updates
+
+### PUT `/api/client/me/consent`
+**Description:** Update current client's SMS notification consent preferences
+**Access:** CLIENT only
+**Headers:** `Authorization: Bearer {accessToken}`
+**Request Body:**
+```json
+{
+  "smsOptIn": false
+}
+```
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Consent preferences updated successfully",
+  "data": {
+    "id": "consent-uuid",
+    "clientId": "client-uuid",
+    "smsOptIn": false,
+    "smsUnsubToken": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "createdAt": "2024-02-10T10:00:00+01:00",
+    "updatedAt": "2024-02-11T15:30:00+01:00"
+  }
+}
+```
+**Notes:**
+- Only `smsOptIn` field can be updated
+- Unsubscribe token remains unchanged
+- All updates are logged to audit trail
+
+### POST `/api/consent/unsubscribe/{token}`
+**Description:** Public unsubscribe endpoint using SMS unsubscribe token
+**Access:** Public (no authentication required)
+**Example:** `/api/consent/unsubscribe/a1b2c3d4-e5f6-7890-abcd-ef1234567890`
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Successfully unsubscribed from SMS notifications",
+  "data": null
+}
+```
+**Notes:**
+- No authentication required (public endpoint)
+- Sets `smsOptIn` to `false` for the client associated with the token
+- Operation is logged to audit trail (no actor since public)
+- Typically used in SMS messages: "Reply STOP or visit: https://beautycenter.com/api/consent/unsubscribe/{token}"
+
+**Error Response (404 Not Found):**
+```json
+{
+  "success": false,
+  "message": "Invalid or expired unsubscribe token",
+  "errorCode": 404,
+  "timestamp": "2024-02-11T15:30:00+01:00"
+}
+```
+
+---
+
+## 🔍 Audit Trail
+
+All sensitive operations on client files and consent are logged to an immutable audit trail for compliance (GDPR/HIPAA).
+
+**Audit Entry Structure:**
+- `entityType`: "ClientFile" or "ClientConsent"
+- `entityId`: UUID of the entity
+- `action`: "CREATE", "UPDATE", "DELETE", or "READ"
+- `actorId`: UUID of the user who performed the action
+- `at`: Timestamp of the action
+- `beforeJson`: JSON snapshot before the change (for UPDATE/DELETE)
+- `afterJson`: JSON snapshot after the change (for CREATE/UPDATE)
+
+**Logged Operations:**
+- Client file: CREATE, UPDATE, READ
+- Client consent: CREATE, UPDATE
+- Public unsubscribe: UPDATE (no actor)
+
+---
+
+---
+
 ## 🔍 Audit
 
 ### GET `/api/audit`

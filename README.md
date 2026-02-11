@@ -229,6 +229,62 @@ See `API_ROUTES_DOCUMENTATION.md` for detailed API documentation.
 
 ---
 
+### Section 6: Client File & Consent Management ✅
+
+Complete implementation of sensitive medical data management and SMS notification consent:
+
+**6.1 Client File (Medical Dossier):**
+- Comprehensive client medical and personal information management
+- Structured sections: Intake, Medical History, Aesthetic Procedure History
+- Photo consent tracking (follow-up and marketing)
+- Timezone-aware timestamps (OffsetDateTime)
+- Automatic file creation on first access
+
+**6.2 Strict Access Control:**
+- **Clients**: Full read/write access to their own declarative sections only
+- **Employees/Admins**: Read-only access to any client file (cannot modify client-provided data)
+- Separate endpoints for client self-service vs. staff access
+- Role-based authorization with `@PreAuthorize` annotations
+- Access violations return 403 Forbidden
+
+**6.3 SMS Consent Management:**
+- SMS opt-in/opt-out preferences per client
+- Auto-generated UUID-based unsubscribe tokens
+- Public unsubscribe endpoint (no authentication required)
+- Token persistence across consent updates
+- Default opt-in for new clients
+
+**6.4 Comprehensive Audit Logging:**
+- All sensitive data operations logged to audit trail
+- CREATE, UPDATE, DELETE, and READ operations tracked
+- JSON serialization of entity snapshots (before/after states)
+- Actor tracking (who performed the action)
+- Timezone-aware timestamps for compliance
+
+**Security & Compliance:**
+- GDPR/HIPAA-ready audit trail for sensitive medical data
+- Immutable audit entries for legal compliance
+- Access control enforced at service layer
+- All endpoints require JWT authentication (except public unsubscribe)
+
+**API Endpoints:**
+- `GET /api/client/me/file` - Client reads own file
+- `PUT /api/client/me/file` - Client updates own file
+- `GET /api/clients/{id}/file` - Employee/Admin reads any client file
+- `GET /api/client/me/consent` - Client reads own consent
+- `PUT /api/client/me/consent` - Client updates consent preferences
+- `POST /api/consent/unsubscribe/{token}` - Public SMS unsubscribe
+
+**Testing:**
+- Integration tests for access control scenarios
+- Role-based authorization validation
+- Audit logging verification
+- Public unsubscribe token functionality
+
+See `API_ROUTES_DOCUMENTATION.md` for detailed API documentation.
+
+---
+
 ## Development Notes
 
 - Package-by-feature structure for parallel development
