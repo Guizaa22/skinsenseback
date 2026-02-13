@@ -3,6 +3,8 @@ package beauty_center.modules.appointments.service;
 import beauty_center.modules.appointments.entity.Appointment;
 import beauty_center.modules.appointments.entity.AppointmentStatus;
 import beauty_center.modules.appointments.repository.AppointmentRepository;
+import beauty_center.modules.audit.service.AuditService;
+import beauty_center.modules.notifications.service.NotificationService;
 import beauty_center.modules.scheduling.service.AvailabilityService;
 import beauty_center.modules.services.entity.BeautyService;
 import beauty_center.modules.services.repository.BeautyServiceRepository;
@@ -29,6 +31,8 @@ public class AppointmentService {
     private final AppointmentRepository appointmentRepository;
     private final BeautyServiceRepository beautyServiceRepository;
     private final AvailabilityService availabilityService;
+    private final NotificationService notificationService;
+    private final AuditService auditService;
 
     /**
      * Get appointment by ID
@@ -124,6 +128,8 @@ public class AppointmentService {
         Appointment updated = appointmentRepository.save(appointment);
         log.info("Appointment {} rescheduled to {}", id, startAt);
 
+        try { auditService.logUpdate("Appointment", id, null, updated); } catch (Exception e) { log.error("Audit log failed: {}", e.getMessage()); }
+
         return updated;
     }
 
@@ -153,6 +159,15 @@ public class AppointmentService {
 
         appointmentRepository.save(appointment);
         log.info("Appointment {} canceled. Reason: {}", id, reason);
+
+        try { auditService.logUpdate("Appointment", id, null, appointment); } catch (Exception e) { log.error("Audit log failed: {}", e.getMessage()); }
+
+        // Cancel any scheduled notifications
+        try {
+            notificationService.cancelNotificationsForAppointment(id);
+        } catch (Exception e) {
+            log.error("Failed to cancel notifications for appointment {}: {}", id, e.getMessage());
+        }
     }
 
     /**
@@ -175,6 +190,8 @@ public class AppointmentService {
         appointment.setStatus(AppointmentStatus.COMPLETED);
         appointmentRepository.save(appointment);
         log.info("Appointment {} marked as completed", id);
+
+        try { auditService.logUpdate("Appointment", id, null, appointment); } catch (Exception e) { log.error("Audit log failed: {}", e.getMessage()); }
     }
 
 }

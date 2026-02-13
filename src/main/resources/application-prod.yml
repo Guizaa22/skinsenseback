@@ -13,7 +13,18 @@ spring:
     enabled: true
     locations: classpath:db/migration
   defer-datasource-initialization: true
+  # Disable default Spring Security user in production
+  security:
+    user:
+      name: ""
+      password: ""
 jwt:
   secret: ${JWT_SECRET}
 encryption:
   key: ${ENCRYPTION_KEY}
+logging:
+  level:
+    root: INFO
+    beauty_center: INFO
+    # Don't log medical fields at DEBUG in production
+    org.hibernate.SQL: WARN

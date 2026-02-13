@@ -32,19 +32,19 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .csrf().disable()
-            .cors().and()
-            .sessionManagement()
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            .and()
-            .exceptionHandling()
+            .csrf(csrf -> csrf.disable())
+            .cors(cors -> {})
+            .sessionManagement(session -> session
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .exceptionHandling(exceptions -> exceptions
                 .authenticationEntryPoint(jwtAuthenticationEntryPoint)
-                .accessDeniedHandler(jwtAccessDeniedHandler)
-            .and()
-            .authorizeHttpRequests()
+                .accessDeniedHandler(jwtAccessDeniedHandler))
+            .authorizeHttpRequests(auth -> auth
                 // Public auth endpoints
                 .requestMatchers("/api/auth/login").permitAll()
                 .requestMatchers("/api/auth/refresh").permitAll()
+                // Public SMS unsubscribe endpoint (no auth required)
+                .requestMatchers("/api/consent/unsubscribe/**").permitAll()
                 // API documentation (public)
                 .requestMatchers("/v3/api-docs/**").permitAll()
                 .requestMatchers("/swagger-ui/**").permitAll()
@@ -52,8 +52,7 @@ public class SecurityConfig {
                 // Health check (public)
                 .requestMatchers("/actuator/health").permitAll()
                 // All other endpoints require authentication
-                .anyRequest().authenticated()
-            .and()
+                .anyRequest().authenticated())
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

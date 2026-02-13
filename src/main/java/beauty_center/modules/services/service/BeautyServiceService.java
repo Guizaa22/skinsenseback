@@ -1,11 +1,13 @@
 package beauty_center.modules.services.service;
 
+import beauty_center.modules.audit.service.AuditService;
 import beauty_center.modules.services.entity.BeautyService;
 import beauty_center.modules.services.entity.BeautyServiceEmployee;
 import beauty_center.modules.services.repository.BeautyServiceEmployeeRepository;
 import beauty_center.modules.services.repository.BeautyServiceRepository;
 import beauty_center.modules.services.repository.SpecialtyRepository;
 import beauty_center.modules.users.repository.UserAccountRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +21,7 @@ import java.util.stream.Collectors;
 /**
  * Beauty service service managing available services.
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -28,6 +31,7 @@ public class BeautyServiceService {
     private final BeautyServiceEmployeeRepository beautyServiceEmployeeRepository;
     private final SpecialtyRepository specialtyRepository;
     private final UserAccountRepository userAccountRepository;
+    private final AuditService auditService;
 
     /**
      * Get all services
@@ -71,6 +75,8 @@ public class BeautyServiceService {
 
         BeautyService created = beautyServiceRepository.save(service);
 
+        try { auditService.logCreate("BeautyService", created.getId(), created); } catch (Exception e) { log.error("Audit log failed: {}", e.getMessage()); }
+
         // Assign allowed employees if provided
         if (allowedEmployeeIds != null && !allowedEmployeeIds.isEmpty()) {
             assignEmployeesToService(created.getId(), allowedEmployeeIds);
@@ -109,6 +115,8 @@ public class BeautyServiceService {
         existing.setActive(updates.isActive());
 
         BeautyService updated = beautyServiceRepository.save(existing);
+
+        try { auditService.logUpdate("BeautyService", id, null, updated); } catch (Exception e) { log.error("Audit log failed: {}", e.getMessage()); }
 
         // Update allowed employees if provided
         if (allowedEmployeeIds != null) {

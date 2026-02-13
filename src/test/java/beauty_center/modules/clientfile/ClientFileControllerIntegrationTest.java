@@ -1,7 +1,6 @@
 package beauty_center.modules.clientfile;
 
 import beauty_center.modules.auth.dto.LoginRequest;
-import beauty_center.modules.auth.dto.LoginResponse;
 import beauty_center.modules.clientfile.dto.*;
 import beauty_center.modules.clientfile.entity.ClientFile;
 import beauty_center.modules.clientfile.repository.ClientFileRepository;
@@ -221,7 +220,8 @@ public class ClientFileControllerIntegrationTest {
                                 .andReturn();
 
                 String responseBody = result.getResponse().getContentAsString();
-                LoginResponse loginResponse = objectMapper.readValue(responseBody, LoginResponse.class);
-                return loginResponse.getAccessToken();
+                // /api/auth/login returns ApiResponse<LoginResponse>, unwrap from "data"
+                return objectMapper.readTree(responseBody)
+                                .get("data").get("accessToken").asText();
         }
 }

@@ -3,6 +3,8 @@ package beauty_center.modules.appointments.service;
 import beauty_center.modules.appointments.entity.Appointment;
 import beauty_center.modules.appointments.entity.AppointmentStatus;
 import beauty_center.modules.appointments.repository.AppointmentRepository;
+import beauty_center.modules.audit.service.AuditService;
+import beauty_center.modules.notifications.service.NotificationService;
 import beauty_center.modules.scheduling.service.AvailabilityService;
 import beauty_center.modules.services.entity.BeautyService;
 import beauty_center.modules.services.repository.BeautyServiceRepository;
@@ -35,6 +37,8 @@ public class BookingService {
     private final BeautyServiceRepository beautyServiceRepository;
     private final UserAccountRepository userAccountRepository;
     private final AvailabilityService availabilityService;
+    private final NotificationService notificationService;
+    private final AuditService auditService;
 
     // Locks per employee to prevent concurrent bookings for the same employee
     private final ConcurrentHashMap<UUID, Lock> employeeLocks = new ConcurrentHashMap<>();
@@ -120,6 +124,18 @@ public class BookingService {
             try {
                 Appointment saved = appointmentRepository.save(appointment);
                 log.info("Appointment created successfully: {}", saved.getId());
+
+                // Audit log
+                try { auditService.logCreate("Appointment", saved.getId(), saved); } catch (Exception e) { log.error("Audit log failed: {}", e.getMessage()); }
+
+                // Schedule notifications (booking confirmation + reminders)
+                try {
+                    notificationService.scheduleNotificationsForAppointment(saved);
+                } catch (Exception e) {
+                    log.error("Failed to schedule notifications for appointment {}: {}", saved.getId(), e.getMessage());
+                    // Don't fail the booking if notifications fail
+                }
+
                 return saved;
             } catch (DataIntegrityViolationException e) {
                 // Database exclusion constraint caught a race condition
