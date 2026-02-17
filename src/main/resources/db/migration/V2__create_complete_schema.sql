@@ -146,10 +146,11 @@ CREATE INDEX idx_appointment_status ON appointment(status);
 
 -- Exclusion constraint: prevent overlapping appointments for same employee
 -- Uses GiST index with btree_gist extension for efficient overlap detection
+-- Note: '[)' means start inclusive, end exclusive to avoid boundary overlaps
 ALTER TABLE appointment ADD CONSTRAINT appointment_no_overlap
     EXCLUDE USING gist (
         employee_id WITH =,
-        tstzrange_immutable(start_at, end_at, '[]') WITH &&
+        tstzrange_immutable(start_at, end_at, '[)') WITH &&
     ) WHERE (status != 'CANCELED');
 
 -- ============================================================================

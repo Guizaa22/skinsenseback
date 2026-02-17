@@ -26,6 +26,7 @@ public class UserAccount {
 
     @Id
     @Column(name = "id", columnDefinition = "UUID")
+    @Builder.Default
     private UUID id = UUID.randomUUID();
 
     @Column(name = "full_name", nullable = false)
@@ -41,7 +42,10 @@ public class UserAccount {
     private String passwordHash;
 
     @Column(name = "is_active", nullable = false)
+    @Builder.Default
     private boolean active = true;
+
+    // ...existing code...
 
     @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false)

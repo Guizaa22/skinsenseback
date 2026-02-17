@@ -139,28 +139,21 @@ public class AppointmentController {
             }
         }
 
-        try {
-            Appointment appointment = bookingService.createAppointment(
-                    clientId,
-                    request.getEmployeeId(),
-                    request.getServiceId(),
-                    request.getStartAt(),
-                    request.getNotes());
+        Appointment appointment = bookingService.createAppointment(
+                clientId,
+                request.getEmployeeId(),
+                request.getServiceId(),
+                request.getStartAt(),
+                request.getNotes());
 
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(ApiResponse.ok(toResponse(appointment), "Appointment created successfully"));
-
-        } catch (BookingService.AppointmentConflictException e) {
-            log.warn("Appointment conflict: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body(ApiResponse.error(e.getMessage(), HttpStatus.CONFLICT.value()));
-        }
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.ok(toResponse(appointment), "Appointment created successfully"));
     }
 
 
     /**
      * Update/reschedule appointment.
-     * Only ADMIN and EMPLOYEE can reschedule appointments.
+     * Only ADMIN and the assigned EMPLOYEE can reschedule appointments.
      */
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
@@ -170,31 +163,33 @@ public class AppointmentController {
 
         log.info("Update appointment {} requested by: {}", id, currentUser.getUsername());
 
-        try {
-            Appointment appointment = appointmentService.updateAppointment(
-                    id,
-                    request.getEmployeeId(),
-                    request.getServiceId(),
-                    request.getStartAt());
+        Appointment appointment = appointmentService.getAppointmentById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Appointment not found: " + id));
 
-            return ResponseEntity.ok(
-                    ApiResponse.ok(toResponse(appointment), "Appointment rescheduled successfully"));
+        UUID currentUserId = currentUser.getUserId();
+        boolean isAssignedEmployee = appointment.getEmployeeId().equals(currentUserId);
 
-        } catch (BookingService.AppointmentConflictException e) {
-            log.warn("Appointment conflict during update: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body(ApiResponse.error(e.getMessage(), HttpStatus.CONFLICT.value()));
-        } catch (IllegalStateException e) {
-            log.warn("Invalid appointment state for update: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(e.getMessage(), HttpStatus.BAD_REQUEST.value()));
+        if (!currentUser.hasRole("ADMIN") && !isAssignedEmployee) {
+            log.warn("User {} attempted to reschedule appointment {} without permission", currentUserId, id);
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(ApiResponse.error("Access denied", HttpStatus.FORBIDDEN.value()));
         }
+
+        Appointment updated = appointmentService.updateAppointment(
+                id,
+                request.getEmployeeId(),
+                request.getServiceId(),
+                request.getStartAt());
+
+        return ResponseEntity.ok(
+                ApiResponse.ok(toResponse(updated), "Appointment rescheduled successfully"));
     }
 
     /**
      * Cancel appointment.
      * - CLIENT: can cancel own appointments
-     * - EMPLOYEE/ADMIN: can cancel any appointment
+     * - EMPLOYEE: can cancel own assigned appointments
+     * - ADMIN: can cancel any appointment
      */
     @PostMapping("/{id}/cancel")
     @PreAuthorize("isAuthenticated()")
@@ -207,10 +202,10 @@ public class AppointmentController {
         Appointment appointment = appointmentService.getAppointmentById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Appointment not found: " + id));
 
-        // Check access: client can cancel own, employee/admin can cancel any
         UUID currentUserId = currentUser.getUserId();
         boolean isClient = appointment.getClientId().equals(currentUserId);
-        boolean canCancel = isClient || currentUser.hasAnyRole("EMPLOYEE", "ADMIN");
+        boolean isAssignedEmployee = appointment.getEmployeeId().equals(currentUserId);
+        boolean canCancel = isClient || isAssignedEmployee || currentUser.hasRole("ADMIN");
 
         if (!canCancel) {
             log.warn("User {} attempted to cancel appointment {} without permission", currentUserId, id);
@@ -231,12 +226,24 @@ public class AppointmentController {
 
     /**
      * Mark appointment as completed.
-     * Only EMPLOYEE and ADMIN can complete appointments.
+     * Only EMPLOYEE (if assigned) and ADMIN can complete appointments.
      */
     @PostMapping("/{id}/complete")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<Void>> completeAppointment(@PathVariable UUID id) {
         log.info("Complete appointment {} requested by: {}", id, currentUser.getUsername());
+
+        Appointment appointment = appointmentService.getAppointmentById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Appointment not found: " + id));
+
+        UUID currentUserId = currentUser.getUserId();
+        boolean isAssignedEmployee = appointment.getEmployeeId().equals(currentUserId);
+
+        if (!currentUser.hasRole("ADMIN") && !isAssignedEmployee) {
+            log.warn("User {} attempted to complete appointment {} without permission", currentUserId, id);
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(ApiResponse.error("Access denied", HttpStatus.FORBIDDEN.value()));
+        }
 
         try {
             appointmentService.completeAppointment(id);

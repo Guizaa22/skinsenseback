@@ -6,6 +6,8 @@ import beauty_center.modules.scheduling.dto.WorkingTimeSlotRequest;
 import beauty_center.modules.scheduling.entity.WorkingTimeSlot;
 import beauty_center.modules.scheduling.repository.WorkingTimeSlotRepository;
 import beauty_center.modules.services.entity.BeautyService;
+import beauty_center.modules.services.entity.BeautyServiceEmployee;
+import beauty_center.modules.services.repository.BeautyServiceEmployeeRepository;
 import beauty_center.modules.services.repository.BeautyServiceRepository;
 import beauty_center.modules.users.entity.Role;
 import beauty_center.modules.users.entity.UserAccount;
@@ -61,6 +63,9 @@ class ConcurrentBookingIntegrationTest {
 
     @Autowired
     private BeautyServiceRepository beautyServiceRepository;
+
+    @Autowired
+    private BeautyServiceEmployeeRepository beautyServiceEmployeeRepository;
 
     @Autowired
     private WorkingTimeSlotRepository workingTimeSlotRepository;
@@ -270,6 +275,13 @@ class ConcurrentBookingIntegrationTest {
                 .build();
 
         BeautyService saved = beautyServiceRepository.save(service);
+
+        // Authorize the employee to perform this service
+        beautyServiceEmployeeRepository.save(BeautyServiceEmployee.builder()
+                .beautyServiceId(saved.getId())
+                .employeeId(employeeId)
+                .build());
+
         log.debug("Created beauty service: {} ({} min, {})", name, durationMin, price);
         return saved.getId();
     }

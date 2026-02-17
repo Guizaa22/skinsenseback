@@ -7,7 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * Generic API response wrapper for all endpoints.
+ * Generic API response wrapper for all endpoints (success and error).
  * Ensures consistent response format across the entire API.
  */
 @Data
@@ -20,6 +20,8 @@ public class ApiResponse<T> {
     private boolean success;
     private String message;
     private T data;
+    private String errorCode;
+    private Integer status;
     private String timestamp;
     private String path;
 
@@ -39,10 +41,20 @@ public class ApiResponse<T> {
             .build();
     }
 
-    public static <T> ApiResponse<T> error(String message, int value) {
+    public static <T> ApiResponse<T> error(String message, int statusCode) {
         return ApiResponse.<T>builder()
             .success(false)
             .message(message)
+            .status(statusCode)
+            .build();
+    }
+
+    public static <T> ApiResponse<T> error(String message, String errorCode, int statusCode) {
+        return ApiResponse.<T>builder()
+            .success(false)
+            .message(message)
+            .errorCode(errorCode)
+            .status(statusCode)
             .build();
     }
 

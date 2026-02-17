@@ -12,7 +12,6 @@ import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -38,15 +37,19 @@ public class JwtAccessDeniedHandler implements AccessDeniedHandler {
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setStatus(HttpServletResponse.SC_FORBIDDEN);
 
+        // Use simple Map to avoid serialization issues with complex ApiResponse
         Map<String, Object> errorResponse = new HashMap<>();
         errorResponse.put("success", false);
         errorResponse.put("message", "Access denied");
-        errorResponse.put("error", accessDeniedException.getMessage());
-        errorResponse.put("status", 403);
-        errorResponse.put("timestamp", OffsetDateTime.now().toString());
-        errorResponse.put("path", request.getRequestURI());
+        errorResponse.put("errorCode", "ACCESS_DENIED");
+        errorResponse.put("status", HttpServletResponse.SC_FORBIDDEN);
 
-        objectMapper.writeValue(response.getOutputStream(), errorResponse);
+        try {
+            objectMapper.writeValue(response.getOutputStream(), errorResponse);
+        } catch (Exception e) {
+            log.error("Failed to write error response", e);
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Access denied");
+        }
     }
 }
 

@@ -12,7 +12,6 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -38,15 +37,19 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 
+        // Use simple Map to avoid serialization issues with complex ApiResponse
         Map<String, Object> errorResponse = new HashMap<>();
         errorResponse.put("success", false);
         errorResponse.put("message", "Authentication required");
-        errorResponse.put("error", authException.getMessage());
-        errorResponse.put("status", 401);
-        errorResponse.put("timestamp", OffsetDateTime.now().toString());
-        errorResponse.put("path", request.getRequestURI());
+        errorResponse.put("errorCode", "AUTHENTICATION_FAILED");
+        errorResponse.put("status", HttpServletResponse.SC_UNAUTHORIZED);
 
-        objectMapper.writeValue(response.getOutputStream(), errorResponse);
+        try {
+            objectMapper.writeValue(response.getOutputStream(), errorResponse);
+        } catch (Exception e) {
+            log.error("Failed to write error response", e);
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Authentication required");
+        }
     }
 }
 

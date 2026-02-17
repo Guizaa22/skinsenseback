@@ -7,6 +7,7 @@ import beauty_center.modules.audit.service.AuditService;
 import beauty_center.modules.notifications.service.NotificationService;
 import beauty_center.modules.scheduling.service.AvailabilityService;
 import beauty_center.modules.services.entity.BeautyService;
+import beauty_center.modules.services.repository.BeautyServiceEmployeeRepository;
 import beauty_center.modules.services.repository.BeautyServiceRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +31,7 @@ public class AppointmentService {
 
     private final AppointmentRepository appointmentRepository;
     private final BeautyServiceRepository beautyServiceRepository;
+    private final BeautyServiceEmployeeRepository beautyServiceEmployeeRepository;
     private final AvailabilityService availabilityService;
     private final NotificationService notificationService;
     private final AuditService auditService;
@@ -93,13 +95,11 @@ public class AppointmentService {
         Appointment appointment = appointmentRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Appointment not found: " + id));
 
-        // Only CONFIRMED appointments can be rescheduled
         if (appointment.getStatus() != AppointmentStatus.CONFIRMED) {
             throw new IllegalStateException(
                     "Cannot update appointment with status: " + appointment.getStatus());
         }
 
-        // Get service and validate
         BeautyService service = beautyServiceRepository.findById(serviceId)
                 .orElseThrow(() -> new IllegalArgumentException("Service not found: " + serviceId));
 
@@ -107,10 +107,14 @@ public class AppointmentService {
             throw new IllegalArgumentException("Service is not active: " + serviceId);
         }
 
-        // Calculate new end time
+        if (!beautyServiceEmployeeRepository.existsByBeautyServiceIdAndEmployeeId(serviceId, employeeId)) {
+            log.warn("Employee {} is not allowed to perform service {}", employeeId, serviceId);
+            throw new IllegalArgumentException(
+                    "Employee is not authorized to perform this service: " + serviceId);
+        }
+
         OffsetDateTime endAt = startAt.plusMinutes(service.getDurationMin());
 
-        // Check availability (exclude current appointment from overlap check)
         boolean hasOverlap = appointmentRepository.existsOverlappingAppointment(
                 employeeId, startAt, endAt, id);
 
@@ -119,7 +123,13 @@ public class AppointmentService {
                     "The requested time slot is not available");
         }
 
-        // Update appointment
+        if (!availabilityService.isAvailable(employeeId, startAt, endAt)) {
+            log.warn("Time slot not available for employee {} from {} to {} - outside working hours or during absence",
+                    employeeId, startAt, endAt);
+            throw new BookingService.AppointmentConflictException(
+                    "The requested time slot is not available. Please choose another time.");
+        }
+
         appointment.setEmployeeId(employeeId);
         appointment.setBeautyServiceId(serviceId);
         appointment.setStartAt(startAt);

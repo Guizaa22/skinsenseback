@@ -26,7 +26,7 @@
         <!-- Flyway Configuration -->
         <flyway.url>jdbc:postgresql://localhost:5432/beauty_center</flyway.url>
         <flyway.user>postgres</flyway.user>
-        <flyway.password>gezgez</flyway.password>
+        <flyway.password>mouadhmb12</flyway.password>
     </properties>
 
     <dependencies>

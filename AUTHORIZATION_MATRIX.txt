@@ -1,0 +1,361 @@
+AUTHORIZATION MATRIX - Beauty Center MVP
+=========================================
+
+This document defines who can do what in the Beauty Center system.
+
+ROLE DEFINITIONS
+================
+
+CLIENT
+------
+- Real user booking appointments
+- Can view own profile
+- Can browse services (no auth required)
+- Can book appointments
+- Can cancel own appointments
+- Can view own appointment history
+- Can view/edit own client file
+
+EMPLOYEE
+--------
+- Staff member performing services
+- Can view own profile
+- Can view own calendar (appointments assigned to them)
+- Can reschedule own appointments
+- Can complete own appointments (mark as done)
+- Can cancel own appointments
+- Can add professional notes to own appointments
+- Cannot view other employees' appointments
+
+ADMIN
+-----
+- System administrator
+- Can perform all operations
+- Can manage users (create, activate, deactivate)
+- Can manage services
+- Can manage employees
+- Can reschedule any appointment
+- Can complete any appointment
+- Can cancel any appointment
+- Can view all audit logs
+
+APPOINTMENT LIFECYCLE
+====================
+
+CONFIRMED State (Default)
+  ├─ Created by: CLIENT or ADMIN
+  ├─ Can be rescheduled by: Assigned EMPLOYEE or ADMIN
+  │  └─ Reassign to different EMPLOYEE? Only ADMIN
+  ├─ Can be completed by: Assigned EMPLOYEE or ADMIN
+  └─ Can be canceled by: CLIENT (owner), Assigned EMPLOYEE, or ADMIN
+
+COMPLETED State
+  ├─ Created by: Assigned EMPLOYEE or ADMIN
+  ├─ Can be viewed by: All involved parties (CLIENT, EMPLOYEE, ADMIN)
+  └─ Cannot be modified, canceled, or rescheduled
+
+CANCELED State
+  ├─ Created by: CLIENT, Assigned EMPLOYEE, or ADMIN
+  ├─ Reason recorded: Yes (optional)
+  └─ Cannot be modified, reactivated, or rescheduled
+
+ENDPOINT AUTHORIZATION MATRIX
+==============================
+
+POST /api/appointments (Create)
+  CLIENT: Can create for self ✓
+  CLIENT: Can create for other? ✗ (forbidden)
+  EMPLOYEE: ✗ (no access)
+  ADMIN: Can create for any client ✓
+
+  Validation:
+    - Employee must be allowed for service
+    - Time slot must be available
+    - Client must exist
+    - Service must be active
+
+GET /api/appointments (List)
+  CLIENT: See own appointments only ✓
+  EMPLOYEE: See own calendar ✓
+  ADMIN: See all appointments ✓
+
+  Filters allowed:
+    - clientId: ADMIN only
+    - employeeId: ADMIN only
+    - status: All roles
+    - dateRange: All roles
+
+GET /api/appointments/{id} (Get one)
+  CLIENT: Own appointment ✓
+  CLIENT: Other's appointment? ✗
+  EMPLOYEE: Own appointment ✓
+  EMPLOYEE: Other's appointment? ✗
+  ADMIN: Any appointment ✓
+
+PUT /api/appointments/{id} (Reschedule)
+  CLIENT: ✗ (no access)
+  EMPLOYEE: Own appointment only ✓
+  EMPLOYEE: Other's appointment? ✗
+  ADMIN: Any appointment ✓
+
+  Validation:
+    - Only CONFIRMED appointments can be rescheduled
+    - New time slot must be available
+    - Employee must be allowed for service (if changing)
+
+POST /api/appointments/{id}/complete
+  CLIENT: ✗ (no access)
+  EMPLOYEE: Own appointment only ✓
+  EMPLOYEE: Other's appointment? ✗
+  ADMIN: Any appointment ✓
+
+  Validation:
+    - Only CONFIRMED appointments can be completed
+    - Cannot complete without appointment check
+
+POST /api/appointments/{id}/cancel
+  CLIENT: Own appointment ✓
+  CLIENT: Other's appointment? ✗
+  EMPLOYEE: Own appointment ✓
+  EMPLOYEE: Other's appointment? ✗
+  ADMIN: Any appointment ✓
+
+  Validation:
+    - Cannot cancel already COMPLETED appointment
+    - Cannot cancel already CANCELED appointment
+    - Reason is optional
+
+GET /api/services (List services)
+  Anonymous: ✓ (no auth required)
+  CLIENT: ✓
+  EMPLOYEE: ✓
+  ADMIN: ✓
+
+GET /api/services/{id} (Get one service)
+  Anonymous: ✓ (no auth required)
+  CLIENT: ✓
+  EMPLOYEE: ✓
+  ADMIN: ✓
+
+POST /api/services (Create)
+  Anonymous: ✗
+  CLIENT: ✗
+  EMPLOYEE: ✗
+  ADMIN: ✓
+
+PUT /api/services/{id} (Update)
+  Anonymous: ✗
+  CLIENT: ✗
+  EMPLOYEE: ✗
+  ADMIN: ✓
+
+DELETE /api/services/{id}
+  Anonymous: ✗
+  CLIENT: ✗
+  EMPLOYEE: ✗
+  ADMIN: ✓
+
+GET /api/users/profile (Get own profile)
+  CLIENT: ✓
+  EMPLOYEE: ✓
+  ADMIN: ✓
+
+GET /api/users/{id} (Get user)
+  CLIENT: Own profile only ✓
+  CLIENT: Other's profile? ✗
+  EMPLOYEE: Own profile only ✓
+  EMPLOYEE: Other's profile? ✗
+  ADMIN: Any user ✓
+
+POST /api/users (Create user)
+  CLIENT: ✗
+  EMPLOYEE: ✗
+  ADMIN: ✓
+
+POST /api/users/{id}/activate
+  CLIENT: ✗
+  EMPLOYEE: ✗
+  ADMIN: ✓
+
+POST /api/users/{id}/deactivate
+  CLIENT: ✗
+  EMPLOYEE: ✗
+  ADMIN: ✓
+
+POST /api/auth/login (Public)
+  Anonymous: ✓
+
+POST /api/auth/refresh (Public)
+  Client with valid refresh token: ✓
+
+SPECIAL BUSINESS RULES
+======================
+
+1. Back-to-Back Appointments
+   - Two appointments with same employee are allowed if:
+     - First ends exactly when second starts
+     - Time ranges don't overlap (use inclusive start, exclusive end)
+   - Example: 10:00-11:00 and 11:00-12:00 ✓
+   - Example: 10:00-11:00 and 10:30-11:30 ✗
+
+2. Employee-Service Relationship
+   - Employee can only book/reschedule to service if:
+     - beauty_service_employee record exists with (serviceId, employeeId)
+   - Checked in:
+     - BookingService.createAppointment
+     - AppointmentService.updateAppointment
+     - AvailabilityService.getAvailableSlots
+
+3. Working Hours & Absences
+   - Appointment must fall within:
+     - Employee's working_time_slot for that day
+     - NOT during any active absence period
+   - Checked via AvailabilityService.isAvailable()
+
+4. Client Self-Service
+   - Can browse all services without login
+   - Can book for themselves (creates under their client_id)
+   - Cannot create appointments for other clients
+
+5. Employee Self-Determination
+   - Can reschedule own appointments only
+   - Cannot reassign to different employee (only ADMIN can)
+   - Can mark own appointment as completed
+
+DATA VISIBILITY RULES
+=====================
+
+Client File (Medical/Sensitive Data)
+  - CLIENT: Read/write own file ✓
+  - EMPLOYEE: Read own appointments' notes (not full file)
+  - ADMIN: Read any client file ✓
+
+Professional Notes
+  - EMPLOYEE: Create/edit notes for own appointments ✓
+  - EMPLOYEE: Read notes from own appointments ✓
+  - CLIENT: Read notes? (depends on app setting)
+  - ADMIN: Full access ✓
+
+Appointment History
+  - CLIENT: See own appointments ✓
+  - EMPLOYEE: See own calendar ✓
+  - ADMIN: See all ✓
+
+Audit Logs
+  - CLIENT: ✗ (no access)
+  - EMPLOYEE: ✗ (no access)
+  - ADMIN: Full access ✓
+
+AUTHENTICATION & TOKENS
+=======================
+
+JWT Token Content:
+  - username (email)
+  - roles (array of strings: "ROLE_ADMIN", "ROLE_EMPLOYEE", "ROLE_CLIENT")
+  - iat (issued at)
+  - exp (expiration)
+
+Token Validation:
+  - Required for all endpoints except:
+    - POST /api/auth/login
+    - POST /api/auth/refresh
+    - GET /api/services (public)
+    - GET /api/services/{id} (public)
+
+Missing Token:
+  - Response: 401 UNAUTHORIZED
+  - Message: "Authentication required"
+
+Invalid Token:
+  - Response: 401 UNAUTHORIZED
+  - Message: "Authentication failed"
+
+Insufficient Permissions:
+  - Response: 403 FORBIDDEN
+  - Message: "Access denied"
+
+ERROR RESPONSES
+===============
+
+All errors follow consistent format:
+
+{
+  "success": false,
+  "message": "Human-readable error message",
+  "errorCode": "SEMANTIC_CODE",
+  "status": 400,
+  "data": null
+}
+
+Common Error Codes:
+  - VALIDATION_ERROR: Input validation failed
+  - AUTHENTICATION_FAILED: Login failed
+  - ACCESS_DENIED: Insufficient permissions
+  - NOT_FOUND: Resource doesn't exist
+  - INVALID_ARGUMENT: Invalid parameter value
+  - INVALID_STATE: Operation not allowed in current state
+  - APPOINTMENT_CONFLICT: Time slot unavailable
+  - INTERNAL_ERROR: Unexpected server error
+
+HTTP Status Codes Used:
+  - 200 OK: Success
+  - 201 CREATED: Resource created
+  - 400 BAD_REQUEST: Validation error
+  - 401 UNAUTHORIZED: Authentication required
+  - 403 FORBIDDEN: Permission denied
+  - 409 CONFLICT: Appointment overlap
+  - 500 INTERNAL_SERVER_ERROR: Server error
+
+ENFORCEMENT POINTS
+==================
+
+1. Database Level
+   - Foreign key constraints
+   - Unique constraints (email, service-employee)
+   - Exclusion constraint (no overlapping appointments)
+
+2. Application Level (Primary)
+   - Controller @PreAuthorize annotations
+   - Service method authorization checks
+   - Business rule validation
+
+3. Audit Trail
+   - All sensitive operations logged
+   - Created by / Executed by tracking
+   - Timestamp and IP address recording
+
+TESTING AUTHORIZATION
+=====================
+
+Test files verify:
+  - AppointmentAuthorizationIntegrationTest: Employee ownership
+  - EmployeeServiceValidationIntegrationTest: Employee-service relationship
+  - AppointmentBackToBackIntegrationTest: Overlap prevention
+  - UserAccountServiceTest: User validation
+
+Run authorization tests:
+  mvn test -Dtest="*AuthorizationIntegrationTest"
+  mvn test -Dtest="*EmployeeServiceValidationIntegrationTest"
+
+FUTURE ENHANCEMENTS
+===================
+
+Potential additions:
+  1. Granular permissions (beyond role-based)
+  2. Team-based access (employees see each other's calendars)
+  3. Client delegation (book for family members)
+  4. Pending appointments (require confirmation)
+  5. Two-factor authentication for admin
+  6. IP whitelist for admin endpoints
+  7. Session timeout policies
+  8. Resource ownership annotations (@OwnedBy, @AdminOnly)
+
+QUESTIONS?
+==========
+
+Consult:
+  - IMPLEMENTATION_NOTES.txt for implementation details
+  - Test files for practical examples
+  - Service layer code for validation logic
+  - Controller classes for endpoint authorization
+

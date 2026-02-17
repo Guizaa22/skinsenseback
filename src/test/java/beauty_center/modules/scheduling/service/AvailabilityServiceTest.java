@@ -9,6 +9,7 @@ import beauty_center.modules.scheduling.entity.WorkingTimeSlot;
 import beauty_center.modules.scheduling.repository.AbsenceRepository;
 import beauty_center.modules.scheduling.repository.WorkingTimeSlotRepository;
 import beauty_center.modules.services.entity.BeautyService;
+import beauty_center.modules.services.repository.BeautyServiceEmployeeRepository;
 import beauty_center.modules.services.repository.BeautyServiceRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -51,6 +52,9 @@ class AvailabilityServiceTest {
     @Mock
     private BeautyServiceRepository beautyServiceRepository;
 
+    @Mock
+    private BeautyServiceEmployeeRepository beautyServiceEmployeeRepository;
+
     @InjectMocks
     private AvailabilityService availabilityService;
 
@@ -82,6 +86,8 @@ class AvailabilityServiceTest {
     void testNoWorkingHours() {
         // Given: No working hours for the employee
         when(beautyServiceRepository.findById(serviceId)).thenReturn(Optional.of(testService));
+        when(beautyServiceEmployeeRepository.existsByBeautyServiceIdAndEmployeeId(serviceId, employeeId))
+                .thenReturn(true);
         when(workingTimeSlotRepository.findByEmployeeIdAndDayOfWeek(eq(employeeId), any()))
                 .thenReturn(new ArrayList<>());
 
@@ -401,6 +407,8 @@ class AvailabilityServiceTest {
     void testMultiDayAvailability() {
         // Given: Working hours 9:00-12:00 for multiple days
         when(beautyServiceRepository.findById(serviceId)).thenReturn(Optional.of(testService));
+        when(beautyServiceEmployeeRepository.existsByBeautyServiceIdAndEmployeeId(serviceId, employeeId))
+                .thenReturn(true);
         when(absenceRepository.findByEmployeeIdAndDateRange(any(), any(), any()))
                 .thenReturn(new ArrayList<>());
         when(appointmentRepository.findNonCanceledByEmployeeIdAndDateRange(any(), any(), any()))
@@ -481,6 +489,8 @@ class AvailabilityServiceTest {
                 .build();
 
         when(beautyServiceRepository.findById(serviceId)).thenReturn(Optional.of(longService));
+        when(beautyServiceEmployeeRepository.existsByBeautyServiceIdAndEmployeeId(serviceId, employeeId))
+                .thenReturn(true);
 
         String dayOfWeek = testDate.getDayOfWeek().name().substring(0, 3).toUpperCase();
 
@@ -586,6 +596,8 @@ class AvailabilityServiceTest {
      */
     private void setupWorkingHours(LocalTime startTime, LocalTime endTime) {
         when(beautyServiceRepository.findById(serviceId)).thenReturn(Optional.of(testService));
+        when(beautyServiceEmployeeRepository.existsByBeautyServiceIdAndEmployeeId(serviceId, employeeId))
+                .thenReturn(true);
 
         String dayOfWeek = testDate.getDayOfWeek().name().substring(0, 3).toUpperCase();
 
@@ -594,7 +606,7 @@ class AvailabilityServiceTest {
                 .employeeId(employeeId)
                 .dayOfWeek(dayOfWeek)
                 .startTime(startTime)
-                .endTime(endTime)
+                   .endTime(endTime)
                 .build();
 
         when(workingTimeSlotRepository.findByEmployeeIdAndDayOfWeek(eq(employeeId), any()))

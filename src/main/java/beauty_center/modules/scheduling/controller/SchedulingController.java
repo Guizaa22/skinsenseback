@@ -50,32 +50,24 @@ public class SchedulingController {
 
         // Validate days parameter
         if (days < 1 || days > 30) {
-            return ResponseEntity.badRequest()
-                    .body(ApiResponse.error("Days parameter must be between 1 and 30", 400));
+            throw new IllegalArgumentException("Days parameter must be between 1 and 30");
         }
 
-        try {
-            List<TimeSlot> availableSlots = availabilityService.getAvailableSlots(
-                    employeeId, serviceId, date, days);
+        List<TimeSlot> availableSlots = availabilityService.getAvailableSlots(
+                employeeId, serviceId, date, days);
 
-            LocalDate endDate = date.plusDays(days - 1);
+        LocalDate endDate = date.plusDays(days - 1);
 
-            AvailabilityResponse response = AvailabilityResponse.builder()
-                    .employeeId(employeeId)
-                    .serviceId(serviceId)
-                    .startDate(date)
-                    .endDate(endDate)
-                    .availableSlots(availableSlots)
-                    .build();
+        AvailabilityResponse response = AvailabilityResponse.builder()
+                .employeeId(employeeId)
+                .serviceId(serviceId)
+                .startDate(date)
+                .endDate(endDate)
+                .availableSlots(availableSlots)
+                .build();
 
-            return ResponseEntity.ok(
-                    ApiResponse.ok(response, "Availability retrieved successfully"));
-
-        } catch (IllegalArgumentException e) {
-            log.warn("Invalid availability request: {}", e.getMessage());
-            return ResponseEntity.badRequest()
-                    .body(ApiResponse.error(e.getMessage(), 400));
-        }
+        return ResponseEntity.ok(
+                ApiResponse.ok(response, "Availability retrieved successfully"));
     }
 
 }

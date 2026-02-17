@@ -3,9 +3,9 @@ spring:
     name: beauty-center-api
 
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/beauty_center}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/beauty_center_db}
     username: ${SPRING_DATASOURCE_USERNAME:postgres}
-    password: ${SPRING_DATASOURCE_PASSWORD:gezgez}
+    password: ${SPRING_DATASOURCE_PASSWORD:mouadhmb12}
     hikari:
       maximum-pool-size: 10
       minimum-idle: 5

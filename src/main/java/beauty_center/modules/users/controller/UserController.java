@@ -1,11 +1,13 @@
 package beauty_center.modules.users.controller;
 
 import beauty_center.common.api.ApiResponse;
+import beauty_center.modules.users.dto.UserCreateRequest;
 import beauty_center.modules.users.dto.UserResponse;
 import beauty_center.modules.users.entity.Role;
 import beauty_center.modules.users.entity.UserAccount;
 import beauty_center.modules.users.service.UserAccountService;
 import beauty_center.security.CurrentUser;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -14,14 +16,12 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 /**
  * User management controller with role-based access control.
- * Demonstrates @PreAuthorize usage for different authorization scenarios.
  *
- * - ADMIN: Can create users, deactivate accounts
+ * - ADMIN: Can create users, activate/deactivate accounts
  * - EMPLOYEE: Can view own profile
  * - CLIENT: Can view own profile
  */
@@ -36,7 +36,6 @@ public class UserController {
 
     /**
      * Get current authenticated user profile.
-     * Accessible by any authenticated user.
      */
     @GetMapping("/profile")
     @PreAuthorize("isAuthenticated()")
@@ -53,10 +52,7 @@ public class UserController {
     }
 
     /**
-     * Get user by ID.
-     * Accessible by:
-     * - ADMIN: Can view any user
-     * - Own user can view their own profile (checked in method body)
+     * Get user by ID (ADMIN can view any, others can view their own).
      */
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') or isAuthenticated()")
@@ -66,7 +62,6 @@ public class UserController {
         UserAccount user = userAccountService.getUserById(id)
             .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        // Non-admin users can only view their own profile
         if (!currentUser.hasRole("ADMIN") && !user.getEmail().equals(currentUser.getUsername())) {
             throw new AccessDeniedException("Access denied: You can only view your own profile");
         }
@@ -77,17 +72,22 @@ public class UserController {
     }
 
     /**
-     * Create new user account.
-     * Only ADMIN can create users.
+     * Create new user account (ADMIN only).
      */
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<UserResponse>> createUser(@RequestBody UserAccount userRequest) {
+    public ResponseEntity<ApiResponse<UserResponse>> createUser(@Valid @RequestBody UserCreateRequest request) {
         log.info("Create user request from ADMIN: {}", currentUser.getUsername());
 
         try {
-            // TODO: Implement proper creation with password validation
-            UserAccount created = userAccountService.createUser(userRequest, "TempPassword123");
+            UserAccount newUser = UserAccount.builder()
+                .fullName(request.getFullName())
+                .email(request.getEmail())
+                .phone(request.getPhone())
+                .role(Role.CLIENT)
+                .build();
+
+            UserAccount created = userAccountService.createUser(newUser, request.getPassword());
 
             return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.ok(UserResponse.fromEntity(created), "User created successfully"));
@@ -98,8 +98,7 @@ public class UserController {
     }
 
     /**
-     * Deactivate user account.
-     * Only ADMIN can deactivate users.
+     * Deactivate user account (ADMIN only).
      */
     @PostMapping("/{id}/deactivate")
     @PreAuthorize("hasRole('ADMIN')")
@@ -118,8 +117,7 @@ public class UserController {
     }
 
     /**
-     * Activate user account.
-     * Only ADMIN can activate users.
+     * Activate user account (ADMIN only).
      */
     @PostMapping("/{id}/activate")
     @PreAuthorize("hasRole('ADMIN')")
@@ -137,18 +135,5 @@ public class UserController {
         }
     }
 
-    /**
-     * List all employees.
-     * Only ADMIN can list employees.
-     */
-    @GetMapping("/employees")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<String>> listEmployees() {
-        log.info("List employees request from ADMIN: {}", currentUser.getUsername());
-
-        return ResponseEntity.ok(
-            ApiResponse.ok("Employee list endpoint", "Employees retrieved successfully")
-        );
-    }
 
 }

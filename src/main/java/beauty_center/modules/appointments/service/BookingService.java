@@ -7,6 +7,7 @@ import beauty_center.modules.audit.service.AuditService;
 import beauty_center.modules.notifications.service.NotificationService;
 import beauty_center.modules.scheduling.service.AvailabilityService;
 import beauty_center.modules.services.entity.BeautyService;
+import beauty_center.modules.services.repository.BeautyServiceEmployeeRepository;
 import beauty_center.modules.services.repository.BeautyServiceRepository;
 import beauty_center.modules.users.repository.UserAccountRepository;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +36,7 @@ public class BookingService {
 
     private final AppointmentRepository appointmentRepository;
     private final BeautyServiceRepository beautyServiceRepository;
+    private final BeautyServiceEmployeeRepository beautyServiceEmployeeRepository;
     private final UserAccountRepository userAccountRepository;
     private final AvailabilityService availabilityService;
     private final NotificationService notificationService;
@@ -86,6 +88,13 @@ public class BookingService {
 
             if (!service.isActive()) {
                 throw new IllegalArgumentException("Service is not active: " + serviceId);
+            }
+
+            // Check if employee is allowed to perform this service
+            if (!beautyServiceEmployeeRepository.existsByBeautyServiceIdAndEmployeeId(serviceId, employeeId)) {
+                log.warn("Employee {} is not allowed to perform service {}", employeeId, serviceId);
+                throw new IllegalArgumentException(
+                        "Employee is not authorized to perform this service: " + serviceId);
             }
 
             // Calculate end time based on service duration

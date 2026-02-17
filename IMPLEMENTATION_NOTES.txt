@@ -1,0 +1,114 @@
+SUMMARY OF CHANGES - Beauty Center MVP Fixes
+============================================
+
+This file documents all the fixes applied to the Beauty Center backend project.
+
+1. DATABASE CONSTRAINT - BACK-TO-BACK APPOINTMENTS
+   - Status: ALREADY CORRECT (V3 migration)
+   - V3__fix_appointment_exclusion_constraint.sql uses '[)' (inclusive start, exclusive end)
+   - Allows back-to-back appointments (10:00-11:00 and 11:00-12:00)
+   - Prevents real overlaps (10:00-11:00 and 10:30-11:30)
+
+2. EMPLOYEE-SERVICE ENFORCEMENT
+   - BookingService.createAppointment: Validates employee is allowed for service
+   - AvailabilityService.getAvailableSlots: Validates employee is allowed for service
+   - AppointmentService.updateAppointment: Added same validation + working hours check
+   - Uses BeautyServiceEmployeeRepository.existsByBeautyServiceIdAndEmployeeId()
+
+3. AUTHORIZATION GAPS - EMPLOYEE OWNERSHIP
+   - AppointmentController.updateAppointment: Only assigned employee or ADMIN can reschedule
+   - AppointmentController.completeAppointment: Only assigned employee or ADMIN can complete
+   - AppointmentController.cancelAppointment: Updated to enforce employee ownership
+   - CLIENT: Can cancel own appointments
+   - EMPLOYEE: Can only manage their assigned appointments
+   - ADMIN: Can manage all appointments
+
+4. UNIFIED RESPONSE FORMAT
+   - ApiResponse extended to support error responses
+   - Added errorCode and status fields
+   - GlobalExceptionHandler rewritten to use ApiResponse for all errors
+   - JwtAuthenticationEntryPoint: Updated to return ApiResponse
+   - JwtAccessDeniedHandler: Updated to return ApiResponse
+   - All error responses now use consistent JSON structure
+
+5. TIMEZONE HANDLING
+   - Status: ALREADY CORRECT
+   - AvailabilityService.generateSlotsFromWorkingHours uses DEFAULT_ZONE.getRules().getOffset(date.atStartOfDay())
+   - This is DST-safe and handles date-specific offsets
+
+6. PUBLIC SERVICES ENDPOINT
+   - SecurityConfig: Added permitAll() for GET /api/services and GET /api/services/**
+   - Allows unauthenticated clients to list and view services
+   - POST/PUT/DELETE operations remain ADMIN-only
+
+7. USER MANAGEMENT COMPLETION
+   - UserAccountService.createUser: Now validates all required fields
+   - UserAccountService.createUser: Sets default role to CLIENT if not specified
+   - UserAccountService.createUser: Enforces email uniqueness before creation
+   - UserAccountService.updateUser: Validates email uniqueness (excluding current user)
+   - UserController.createUser: Now uses UserCreateRequest DTO
+   - UserController.createUser: No longer uses hard-coded TempPassword123
+   - Request password is properly validated and hashed
+
+FILES MODIFIED
+==============
+
+Application Logic:
+- src/main/java/beauty_center/modules/appointments/service/AppointmentService.java
+- src/main/java/beauty_center/modules/appointments/controller/AppointmentController.java
+- src/main/java/beauty_center/modules/users/service/UserAccountService.java
+- src/main/java/beauty_center/modules/users/controller/UserController.java
+
+Configuration & Security:
+- src/main/java/beauty_center/security/SecurityConfig.java
+- src/main/java/beauty_center/security/JwtAuthenticationEntryPoint.java
+- src/main/java/beauty_center/security/JwtAccessDeniedHandler.java
+
+Common/Infrastructure:
+- src/main/java/beauty_center/common/api/ApiResponse.java
+- src/main/java/beauty_center/common/error/GlobalExceptionHandler.java
+
+Database:
+- src/main/resources/db/migration/V4__employee_service_authorization.sql
+- src/main/resources/db/migration/V6__appointment_authorization_enforcement.sql
+
+Tests (New):
+- src/test/java/beauty_center/modules/appointments/AppointmentBackToBackIntegrationTest.java
+- src/test/java/beauty_center/modules/appointments/AppointmentAuthorizationIntegrationTest.java
+- src/test/java/beauty_center/modules/appointments/EmployeeServiceValidationIntegrationTest.java
+
+TESTING
+=======
+
+All changes maintain backward compatibility for MVP functionality:
+1. Back-to-back appointments: Database constraint + new tests
+2. Employee-service validation: Integration tests validate rejection
+3. Employee ownership: Authorization tests validate enforcement
+4. Unified responses: All endpoints return ApiResponse structure
+5. Public services: Can be accessed without JWT token
+
+Run: mvn test
+to verify all fixes are working correctly.
+
+BEHAVIOR SUMMARY
+================
+
+MVP Booking Flow (unchanged):
+1. Client chooses employee
+2. Client chooses service (filtered by employee's allowed services)
+3. Client sees available slots (respects working hours/absences)
+4. Back-to-back appointments are allowed
+5. Real overlaps are rejected
+
+Authorization (improved):
+- Employees can only complete/reschedule their own appointments
+- Clients can cancel their own appointments
+- Admins have full control
+- Services endpoint is publicly readable
+
+Data Validation (completed):
+- User creation requires all fields
+- Email uniqueness enforced
+- Default roles applied
+- No temporary passwords
+

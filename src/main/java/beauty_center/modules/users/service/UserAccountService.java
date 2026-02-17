@@ -1,5 +1,6 @@
 package beauty_center.modules.users.service;
 
+import beauty_center.modules.users.entity.Role;
 import beauty_center.modules.users.entity.UserAccount;
 import beauty_center.modules.users.repository.UserAccountRepository;
 import lombok.RequiredArgsConstructor;
@@ -39,15 +40,31 @@ public class UserAccountService {
      * Create new user account
      */
     public UserAccount createUser(UserAccount user, String plainPassword) {
+        if (user.getFullName() == null || user.getFullName().trim().isEmpty()) {
+            throw new IllegalArgumentException("Full name is required");
+        }
+
+        if (user.getEmail() == null || user.getEmail().trim().isEmpty()) {
+            throw new IllegalArgumentException("Email is required");
+        }
+
+        if (plainPassword == null || plainPassword.trim().isEmpty()) {
+            throw new IllegalArgumentException("Password is required");
+        }
+
         if (userAccountRepository.existsByEmail(user.getEmail())) {
             throw new IllegalArgumentException("Email already exists");
         }
 
-        // Hash password before storing
         user.setPasswordHash(passwordEncoder.encode(plainPassword));
 
-        // TODO: Set default role if not specified
-        // TODO: Validate user has all required fields
+        // Enforce server-side defaults
+        if (user.getRole() == null) {
+            user.setRole(Role.CLIENT);
+        }
+
+        // Ensure newly created users are always active (MVP requirement)
+        user.setActive(true);
 
         return userAccountRepository.save(user);
     }
@@ -59,9 +76,21 @@ public class UserAccountService {
         UserAccount existing = userAccountRepository.findById(id)
             .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        // TODO: Validate email uniqueness (excluding current user)
-        existing.setFullName(updates.getFullName());
-        existing.setPhone(updates.getPhone());
+        if (updates.getFullName() != null && !updates.getFullName().trim().isEmpty()) {
+            existing.setFullName(updates.getFullName());
+        }
+
+        if (updates.getEmail() != null && !updates.getEmail().trim().isEmpty()) {
+            if (!existing.getEmail().equals(updates.getEmail()) &&
+                userAccountRepository.existsByEmail(updates.getEmail())) {
+                throw new IllegalArgumentException("Email already exists");
+            }
+            existing.setEmail(updates.getEmail());
+        }
+
+        if (updates.getPhone() != null) {
+            existing.setPhone(updates.getPhone());
+        }
 
         return userAccountRepository.save(existing);
     }

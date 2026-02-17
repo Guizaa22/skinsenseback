@@ -1,0 +1,182 @@
+BUILD AND TEST INSTRUCTIONS
+============================
+
+Quick Start
+-----------
+
+1. Build project:
+   mvn clean compile
+
+2. Run all tests:
+   mvn test
+
+3. Build WAR/JAR:
+   mvn clean package
+
+4. Run integration tests only:
+   mvn verify
+
+5. Run specific test class:
+   mvn test -Dtest=ApiResponseTest
+   mvn test -Dtest=UserAccountServiceTest
+   mvn test -Dtest=AppointmentBackToBackIntegrationTest
+   mvn test -Dtest=AppointmentAuthorizationIntegrationTest
+   mvn test -Dtest=EmployeeServiceValidationIntegrationTest
+
+Detailed Build Steps
+--------------------
+
+Step 1: Clean
+  mvn clean
+
+Step 2: Compile
+  mvn compile -DskipTests
+
+Step 3: Run Unit Tests
+  mvn test -Dtest=ApiResponseTest,UserAccountServiceTest
+
+Step 4: Run Integration Tests
+  mvn test -Dtest="*IntegrationTest"
+
+Step 5: Full Package
+  mvn clean package -DskipTests=false
+
+Debugging
+---------
+
+Enable debug logging:
+  mvn test -X
+
+Run single test with debug:
+  mvn test -Dtest=ApiResponseTest#testSuccessResponse -X
+
+View test reports:
+  target/surefire-reports/
+
+View coverage (if surefire-report plugin enabled):
+  mvn surefire-report:report
+  open target/site/surefire-report.html
+
+Development Workflow
+--------------------
+
+1. Edit code
+2. mvn clean compile
+3. mvn test (or specific test: mvn test -Dtest=ClassName)
+4. Fix failing tests
+5. Commit to git
+
+For Hot Reload (with IDE):
+  mvn spring-boot:run
+
+With Spring Boot DevTools, changes auto-reload.
+
+Database Testing
+----------------
+
+Tests use @ActiveProfiles("test") which loads application-test.yml.
+Default test database is in-memory H2 (if configured).
+See application-test.yml for test DB configuration.
+
+Pre-requisites for Running Tests
+---------------------------------
+
+✓ Java 17+
+✓ Maven 3.8+
+✓ PostgreSQL 16+ (if running against real DB, not test profile)
+✓ All dependencies downloaded (first run takes time)
+
+Troubleshooting
+---------------
+
+Build Fails with "Cannot create classic terminal window":
+  - Use PowerShell directly or upgrade IDE to 2025.2+
+  - Or use command line: cd D:\projects\Beauty_Center && mvn clean test
+
+Tests Fail with "Connection refused":
+  - Ensure test profile is active (@ActiveProfiles("test"))
+  - Check application-test.yml for correct test DB config
+  - H2 in-memory should work out of box
+
+Import Errors / Missing Classes:
+  - Run: mvn clean install
+  - Refresh IDE project
+  - Invalidate IDE cache and restart
+
+Dependency Issues:
+  - Delete: ~/.m2/repository
+  - Run: mvn clean dependency:resolve
+  - This re-downloads all dependencies
+
+Success Indicators
+------------------
+
+✓ "BUILD SUCCESS" at end of mvn output
+✓ All tests green in IDE or surefire-report
+✓ No compilation errors
+✓ No warnings in console
+
+Deployment Verification
+------------------------
+
+After successful build:
+
+1. Check JAR/WAR exists:
+   ls -la target/*.jar
+   ls -la target/*.war
+
+2. Run application locally:
+   java -jar target/beauty-center-app.jar
+
+3. Test endpoints:
+   curl http://localhost:8080/api/services
+   curl -H "Authorization: Bearer YOUR_TOKEN" http://localhost:8080/api/appointments
+
+4. Check logs for errors:
+   tail -f logs/application.log
+
+CI/CD Integration
+-----------------
+
+GitHub Actions (if present):
+  - Runs mvn test on every push
+  - Runs mvn package on PR approval
+  - Deploys on merge to main
+
+Manual CI simulation:
+  mvn clean test
+  mvn package -DskipTests=false
+  mvn verify
+
+Profile-Specific Building
+--------------------------
+
+Dev build:
+  mvn clean compile -Pdev
+
+Test build:
+  mvn test -Ptest
+
+Production build:
+  mvn clean package -Pprod -DskipTests
+
+(Adjust -P profile flag based on your pom.xml)
+
+Documentation
+--------------
+
+See also:
+  - IMPLEMENTATION_NOTES.txt (detailed fix descriptions)
+  - CHANGELOG.txt (version history)
+  - README.md (general project info)
+  - API_ROUTES_DOCUMENTATION.md (API endpoints)
+
+Questions?
+----------
+
+Check test files for usage examples:
+  src/test/java/beauty_center/...
+
+Check service/controller implementations:
+  src/main/java/beauty_center/...
+

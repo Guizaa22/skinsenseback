@@ -8,6 +8,7 @@ import beauty_center.modules.scheduling.entity.WorkingTimeSlot;
 import beauty_center.modules.scheduling.repository.AbsenceRepository;
 import beauty_center.modules.scheduling.repository.WorkingTimeSlotRepository;
 import beauty_center.modules.services.entity.BeautyService;
+import beauty_center.modules.services.repository.BeautyServiceEmployeeRepository;
 import beauty_center.modules.services.repository.BeautyServiceRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -43,6 +44,7 @@ public class AvailabilityService {
     private final AbsenceRepository absenceRepository;
     private final AppointmentRepository appointmentRepository;
     private final BeautyServiceRepository beautyServiceRepository;
+    private final BeautyServiceEmployeeRepository beautyServiceEmployeeRepository;
 
     /**
      * Get available time slots for an employee and service.
@@ -52,7 +54,7 @@ public class AvailabilityService {
      * @param serviceId Service UUID
      * @param startDate Start date (inclusive)
      * @param days Number of days to check (1-30)
-     * @return List of available time slots
+     * @return List of available time slots (empty if employee is not authorized)
      * @throws IllegalArgumentException if service not found or inactive
      */
     public List<TimeSlot> getAvailableSlots(
@@ -67,6 +69,13 @@ public class AvailabilityService {
 
         if (!service.isActive()) {
             throw new IllegalArgumentException("Service is not active: " + serviceId);
+        }
+
+        // Check if employee is allowed to perform this service
+        // Return empty list if not authorized (safe for unit tests and queries)
+        if (!beautyServiceEmployeeRepository.existsByBeautyServiceIdAndEmployeeId(serviceId, employeeId)) {
+            log.debug("Employee {} is not authorized to perform service {}, returning empty slots", employeeId, serviceId);
+            return Collections.emptyList();
         }
 
         // Calculate end date
@@ -167,7 +176,7 @@ public class AvailabilityService {
         LocalTime endTime = workingSlot.getEndTime();
 
         while (currentTime.plusMinutes(serviceDurationMinutes).compareTo(endTime) <= 0) {
-            OffsetDateTime slotStart = OffsetDateTime.of(date, currentTime, ZoneOffset.ofHours(1));
+            OffsetDateTime slotStart = OffsetDateTime.of(date, currentTime, DEFAULT_ZONE.getRules().getOffset(date.atStartOfDay()));
             OffsetDateTime slotEnd = slotStart.plusMinutes(serviceDurationMinutes);
 
             slots.add(TimeSlot.builder()

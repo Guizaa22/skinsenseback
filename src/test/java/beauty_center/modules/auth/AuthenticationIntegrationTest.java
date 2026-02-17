@@ -170,7 +170,7 @@ class AuthenticationIntegrationTest {
     @Test
     @DisplayName("Should allow admin to access admin-only endpoint")
     void testAdminRoleAccess() throws Exception {
-        mockMvc.perform(get("/api/users/employees")
+        mockMvc.perform(get("/api/admin/employees")
             .header("Authorization", "Bearer " + adminToken))
             .andExpect(status().isOk());
     }
@@ -178,7 +178,7 @@ class AuthenticationIntegrationTest {
     @Test
     @DisplayName("Should deny employee access to admin-only endpoint")
     void testEmployeeRoleDeniedAdminEndpoint() throws Exception {
-        mockMvc.perform(get("/api/users/employees")
+        mockMvc.perform(get("/api/admin/employees")
             .header("Authorization", "Bearer " + employeeToken))
             .andExpect(status().isForbidden());
     }
@@ -186,7 +186,7 @@ class AuthenticationIntegrationTest {
     @Test
     @DisplayName("Should deny client access to admin-only endpoint")
     void testClientRoleDeniedAdminEndpoint() throws Exception {
-        mockMvc.perform(get("/api/users/employees")
+        mockMvc.perform(get("/api/admin/employees")
             .header("Authorization", "Bearer " + clientToken))
             .andExpect(status().isForbidden());
     }
