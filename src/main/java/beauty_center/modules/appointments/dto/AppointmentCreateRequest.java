@@ -11,8 +11,10 @@ import java.util.UUID;
 
 /**
  * Appointment creation request DTO.
+ * Client books a service without selecting an employee.
  * Client ID is determined from authenticated user context.
  * Admin can optionally specify clientId to book for another client.
+ * Employee is auto-assigned by the backend based on availability.
  */
 @Data
 @Builder
@@ -25,8 +27,6 @@ public class AppointmentCreateRequest {
     @NotNull(message = "Service ID is required")
     private UUID serviceId;
 
-    @NotNull(message = "Employee ID is required")
-    private UUID employeeId;
 
     @NotNull(message = "Start time is required")
     private OffsetDateTime startAt;

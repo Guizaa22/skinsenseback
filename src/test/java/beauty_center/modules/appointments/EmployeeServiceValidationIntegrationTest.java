@@ -143,7 +143,6 @@ class EmployeeServiceValidationIntegrationTest {
 
         AppointmentCreateRequest req = AppointmentCreateRequest.builder()
             .clientId(clientId)
-            .employeeId(allowedEmployeeId)
             .serviceId(serviceId)
             .startAt(startTime)
             .notes("Valid service booking")
@@ -158,26 +157,37 @@ class EmployeeServiceValidationIntegrationTest {
     }
 
     @Test
-    @DisplayName("Should reject appointment when employee is not allowed for service")
+    @DisplayName("Should reject appointment when no employee is allowed for service")
     void testForbiddenEmployeeCannotBookService() throws Exception {
+        // This test now validates that if NO employees are allowed for a service,
+        // the auto-assignment fails
         LocalDate today = LocalDate.now(ZoneId.of("Africa/Tunis"));
         OffsetDateTime startTime = today.atTime(10, 0).atZone(ZoneId.of("Africa/Tunis")).toOffsetDateTime();
 
+        // Create a service with NO allowed employees
+        BeautyService serviceWithNoEmployees = BeautyService.builder()
+            .id(UUID.randomUUID())
+            .name("Service with no employees")
+            .durationMin(60)
+            .price(BigDecimal.valueOf(100.0))
+            .isActive(true)
+            .build();
+        beautyServiceRepository.save(serviceWithNoEmployees);
+
         AppointmentCreateRequest req = AppointmentCreateRequest.builder()
             .clientId(clientId)
-            .employeeId(forbiddenEmployeeId)
-            .serviceId(serviceId)
+            .serviceId(serviceWithNoEmployees.getId())
             .startAt(startTime)
-            .notes("Invalid service booking")
+            .notes("Invalid service booking - no employees assigned")
             .build();
 
         mockMvc.perform(post("/api/appointments")
             .header("Authorization", "Bearer " + clientToken)
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(req)))
-            .andExpect(status().isBadRequest())
+            .andExpect(status().isUnprocessableEntity())
             .andExpect(jsonPath("$.success", is(false)))
-            .andExpect(jsonPath("$.message").value("Employee is not authorized to perform this service: " + serviceId));
+            .andExpect(jsonPath("$.message").value("No available employee for this service at the selected time."));
     }
 }
 

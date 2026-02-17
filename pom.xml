@@ -24,7 +24,7 @@
         <jjwt.version>0.12.3</jjwt.version>
 
         <!-- Flyway Configuration -->
-        <flyway.url>jdbc:postgresql://localhost:5432/beauty_center</flyway.url>
+        <flyway.url>jdbc:postgresql://localhost:5432/beauty_center_db</flyway.url>
         <flyway.user>postgres</flyway.user>
         <flyway.password>mouadhmb12</flyway.password>
     </properties>

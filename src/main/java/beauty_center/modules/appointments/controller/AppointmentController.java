@@ -3,6 +3,7 @@ package beauty_center.modules.appointments.controller;
 import beauty_center.common.api.ApiResponse;
 import beauty_center.modules.appointments.dto.AppointmentCancelRequest;
 import beauty_center.modules.appointments.dto.AppointmentCreateRequest;
+import beauty_center.modules.appointments.dto.AppointmentReassignRequest;
 import beauty_center.modules.appointments.dto.AppointmentResponse;
 import beauty_center.modules.appointments.dto.AppointmentUpdateRequest;
 import beauty_center.modules.appointments.entity.Appointment;
@@ -113,8 +114,9 @@ public class AppointmentController {
 
     /**
      * Create new appointment.
-     * - CLIENT: books for themselves
-     * - ADMIN: can book for any client (specify clientId)
+     * - CLIENT: books for themselves without selecting employee (auto-assigned)
+     * - ADMIN: can book for any client (specify clientId), employee is auto-assigned
+     * Client does not select employee; system assigns eligible available employee.
      */
     @PostMapping
     @PreAuthorize("isAuthenticated()")
@@ -139,15 +141,20 @@ public class AppointmentController {
             }
         }
 
-        Appointment appointment = bookingService.createAppointment(
-                clientId,
-                request.getEmployeeId(),
-                request.getServiceId(),
-                request.getStartAt(),
-                request.getNotes());
+        try {
+            Appointment appointment = bookingService.createAppointmentWithAutoAssignment(
+                    clientId,
+                    request.getServiceId(),
+                    request.getStartAt(),
+                    request.getNotes());
 
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.ok(toResponse(appointment), "Appointment created successfully"));
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(ApiResponse.ok(toResponse(appointment), "Appointment created successfully"));
+        } catch (BookingService.AppointmentConflictException e) {
+            log.warn("No available employee for appointment: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+                    .body(ApiResponse.error(e.getMessage(), HttpStatus.UNPROCESSABLE_ENTITY.value()));
+        }
     }
 
 
@@ -221,6 +228,41 @@ public class AppointmentController {
             log.warn("Cannot cancel appointment: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(ApiResponse.error(e.getMessage(), HttpStatus.BAD_REQUEST.value()));
+        }
+    }
+
+    /**
+     * Reassign appointment to a different employee.
+     * Only ADMIN can reassign appointments.
+     * Validates employee eligibility and availability at appointment time.
+     */
+    @PostMapping("/{id}/reassign")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<AppointmentResponse>> reassignAppointment(
+            @PathVariable UUID id,
+            @Valid @RequestBody AppointmentReassignRequest request) {
+
+        log.info("Reassign appointment {} requested by ADMIN: {}", id, currentUser.getUsername());
+
+        try {
+            Appointment updated = appointmentService.reassignAppointment(id, request.getEmployeeId());
+            return ResponseEntity.ok(
+                    ApiResponse.ok(toResponse(updated), "Appointment reassigned successfully"));
+
+        } catch (IllegalArgumentException e) {
+            log.warn("Cannot reassign appointment: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error(e.getMessage(), HttpStatus.BAD_REQUEST.value()));
+
+        } catch (IllegalStateException e) {
+            log.warn("Cannot reassign appointment: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error(e.getMessage(), HttpStatus.BAD_REQUEST.value()));
+
+        } catch (BookingService.AppointmentConflictException e) {
+            log.warn("Employee not available for reassignment: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+                    .body(ApiResponse.error(e.getMessage(), HttpStatus.UNPROCESSABLE_ENTITY.value()));
         }
     }
 

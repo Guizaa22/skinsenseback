@@ -48,8 +48,8 @@ public class BeautyServiceController {
         }
 
         List<BeautyServiceResponse> responses = services.stream()
-            .map(this::toResponse)
-            .collect(Collectors.toList());
+                .map(this::toResponse)
+                .collect(Collectors.toList());
 
         return ResponseEntity.ok(ApiResponse.ok(responses, "Services retrieved successfully"));
     }
@@ -63,7 +63,7 @@ public class BeautyServiceController {
         log.info("Get service by ID: {}", id);
 
         BeautyService service = beautyServiceService.getServiceById(id)
-            .orElseThrow(() -> new IllegalArgumentException("Service not found"));
+                .orElseThrow(() -> new IllegalArgumentException("Service not found"));
 
         return ResponseEntity.ok(ApiResponse.ok(toResponse(service), "Service retrieved successfully"));
     }
@@ -80,21 +80,21 @@ public class BeautyServiceController {
 
         try {
             BeautyService service = BeautyService.builder()
-                .name(request.getName())
-                .description(request.getDescription())
-                .durationMin(request.getDurationMinutes())
-                .price(request.getPrice())
-                .specialtyId(request.getSpecialtyId())
-                .isActive(request.getIsActive() != null ? request.getIsActive() : true)
-                .build();
+                    .name(request.getName())
+                    .description(request.getDescription())
+                    .durationMin(request.getDurationMinutes())
+                    .price(request.getPrice())
+                    .specialtyId(request.getSpecialtyId())
+                    .isActive(request.getIsActive() != null ? request.getIsActive() : true)
+                    .build();
 
             BeautyService created = beautyServiceService.createService(service, request.getAllowedEmployeeIds());
 
             return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.ok(toResponse(created), "Service created successfully"));
+                    .body(ApiResponse.ok(toResponse(created), "Service created successfully"));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error(e.getMessage(), HttpStatus.BAD_REQUEST.value()));
+                    .body(ApiResponse.error(e.getMessage(), HttpStatus.BAD_REQUEST.value()));
         }
     }
 
@@ -111,20 +111,20 @@ public class BeautyServiceController {
 
         try {
             BeautyService updates = BeautyService.builder()
-                .name(request.getName())
-                .description(request.getDescription())
-                .durationMin(request.getDurationMinutes())
-                .price(request.getPrice())
-                .specialtyId(request.getSpecialtyId())
-                .isActive(request.getIsActive() != null ? request.getIsActive() : true)
-                .build();
+                    .name(request.getName())
+                    .description(request.getDescription())
+                    .durationMin(request.getDurationMinutes())
+                    .price(request.getPrice())
+                    .specialtyId(request.getSpecialtyId())
+                    .isActive(request.getIsActive() != null ? request.getIsActive() : true)
+                    .build();
 
             BeautyService updated = beautyServiceService.updateService(id, updates, request.getAllowedEmployeeIds());
 
             return ResponseEntity.ok(ApiResponse.ok(toResponse(updated), "Service updated successfully"));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error(e.getMessage(), HttpStatus.BAD_REQUEST.value()));
+                    .body(ApiResponse.error(e.getMessage(), HttpStatus.BAD_REQUEST.value()));
         }
     }
 
@@ -142,7 +142,7 @@ public class BeautyServiceController {
             return ResponseEntity.ok(ApiResponse.ok(null, "Service deactivated successfully"));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error(e.getMessage(), HttpStatus.BAD_REQUEST.value()));
+                    .body(ApiResponse.error(e.getMessage(), HttpStatus.BAD_REQUEST.value()));
         }
     }
 
@@ -153,25 +153,35 @@ public class BeautyServiceController {
         String specialtyName = null;
         if (service.getSpecialtyId() != null) {
             specialtyName = specialtyService.getSpecialtyById(service.getSpecialtyId())
-                .map(Specialty::getName)
-                .orElse(null);
+                    .map(Specialty::getName)
+                    .orElse(null);
         }
 
-        List<UUID> allowedEmployeeIds = beautyServiceService.getAllowedEmployees(service.getId());
+        List<UUID> allowedEmployeeIds = null;
+        // Only include employee IDs for ADMIN users
+        try {
+            // Check if current user has ADMIN role
+            if (beauty_center.security.SecurityUtils.hasRole("ADMIN")) {
+                allowedEmployeeIds = beautyServiceService.getAllowedEmployees(service.getId());
+            }
+        } catch (Exception e) {
+            // If checking role fails (e.g. anonymous user), keep allowedEmployeeIds as null
+            log.debug("Failed to check admin role, hiding employee IDs: {}", e.getMessage());
+        }
 
         return BeautyServiceResponse.builder()
-            .id(service.getId())
-            .name(service.getName())
-            .description(service.getDescription())
-            .durationMinutes(service.getDurationMin())
-            .price(service.getPrice())
-            .isActive(service.isActive())
-            .specialtyId(service.getSpecialtyId())
-            .specialtyName(specialtyName)
-            .allowedEmployeeIds(allowedEmployeeIds)
-            .createdAt(service.getCreatedAt())
-            .updatedAt(service.getUpdatedAt())
-            .build();
+                .id(service.getId())
+                .name(service.getName())
+                .description(service.getDescription())
+                .durationMinutes(service.getDurationMin())
+                .price(service.getPrice())
+                .isActive(service.isActive())
+                .specialtyId(service.getSpecialtyId())
+                .specialtyName(specialtyName)
+                .allowedEmployeeIds(allowedEmployeeIds)
+                .createdAt(service.getCreatedAt())
+                .updatedAt(service.getUpdatedAt())
+                .build();
     }
 
 }

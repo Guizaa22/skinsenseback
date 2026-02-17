@@ -163,7 +163,6 @@ class AppointmentBackToBackIntegrationTest {
 
         AppointmentCreateRequest req1 = AppointmentCreateRequest.builder()
             .clientId(clientId)
-            .employeeId(employeeId)
             .serviceId(serviceId)
             .startAt(slot1Start)
             .notes("First appointment")
@@ -178,7 +177,6 @@ class AppointmentBackToBackIntegrationTest {
 
         AppointmentCreateRequest req2 = AppointmentCreateRequest.builder()
             .clientId(clientId)
-            .employeeId(employeeId)
             .serviceId(serviceId)
             .startAt(slot2Start)
             .notes("Second appointment")
@@ -206,7 +204,6 @@ class AppointmentBackToBackIntegrationTest {
 
         AppointmentCreateRequest req1 = AppointmentCreateRequest.builder()
             .clientId(clientId)
-            .employeeId(employeeId)
             .serviceId(serviceId)
             .startAt(slot1Start)
             .notes("First appointment")
@@ -220,7 +217,6 @@ class AppointmentBackToBackIntegrationTest {
 
         AppointmentCreateRequest req2 = AppointmentCreateRequest.builder()
             .clientId(clientId)
-            .employeeId(employeeId)
             .serviceId(serviceId)
             .startAt(slot2Start)
             .notes("Overlapping appointment")

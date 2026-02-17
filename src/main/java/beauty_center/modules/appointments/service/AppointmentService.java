@@ -9,6 +9,7 @@ import beauty_center.modules.scheduling.service.AvailabilityService;
 import beauty_center.modules.services.entity.BeautyService;
 import beauty_center.modules.services.repository.BeautyServiceEmployeeRepository;
 import beauty_center.modules.services.repository.BeautyServiceRepository;
+import beauty_center.modules.users.repository.UserAccountRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -32,6 +33,7 @@ public class AppointmentService {
     private final AppointmentRepository appointmentRepository;
     private final BeautyServiceRepository beautyServiceRepository;
     private final BeautyServiceEmployeeRepository beautyServiceEmployeeRepository;
+    private final UserAccountRepository userAccountRepository;
     private final AvailabilityService availabilityService;
     private final NotificationService notificationService;
     private final AuditService auditService;
@@ -137,6 +139,68 @@ public class AppointmentService {
 
         Appointment updated = appointmentRepository.save(appointment);
         log.info("Appointment {} rescheduled to {}", id, startAt);
+
+        try { auditService.logUpdate("Appointment", id, null, updated); } catch (Exception e) { log.error("Audit log failed: {}", e.getMessage()); }
+
+        return updated;
+    }
+
+    /**
+     * Reassign an appointment to a different employee.
+     * Only ADMIN can reassign appointments.
+     * Validates that new employee is eligible and available at the appointment time.
+     *
+     * @param id Appointment ID
+     * @param newEmployeeId New employee UUID
+     * @return Updated appointment
+     * @throws IllegalArgumentException if appointment/employee not found or validation fails
+     * @throws IllegalStateException if appointment is not CONFIRMED
+     * @throws BookingService.AppointmentConflictException if new employee not available
+     */
+    public Appointment reassignAppointment(UUID id, UUID newEmployeeId) {
+        Appointment appointment = appointmentRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Appointment not found: " + id));
+
+        if (appointment.getStatus() != AppointmentStatus.CONFIRMED) {
+            throw new IllegalStateException(
+                    "Cannot reassign appointment with status: " + appointment.getStatus());
+        }
+
+        // Validate new employee exists
+        if (!userAccountRepository.existsById(newEmployeeId)) {
+            throw new IllegalArgumentException("Employee not found: " + newEmployeeId);
+        }
+
+        // Check if new employee is allowed to perform the service
+        if (!beautyServiceEmployeeRepository.existsByBeautyServiceIdAndEmployeeId(
+                appointment.getBeautyServiceId(), newEmployeeId)) {
+            log.warn("Employee {} is not authorized to perform service {}",
+                    newEmployeeId, appointment.getBeautyServiceId());
+            throw new IllegalArgumentException(
+                    "Employee is not authorized to perform this service");
+        }
+
+        // Check if new employee is available at the appointment time
+        boolean hasOverlap = appointmentRepository.existsOverlappingAppointment(
+                newEmployeeId, appointment.getStartAt(), appointment.getEndAt(), id);
+
+        if (hasOverlap) {
+            log.warn("New employee {} has conflicting appointments at the requested time", newEmployeeId);
+            throw new BookingService.AppointmentConflictException(
+                    "The selected employee is not available at this time");
+        }
+
+        // Check working hours and absences
+        if (!availabilityService.isAvailable(newEmployeeId, appointment.getStartAt(), appointment.getEndAt())) {
+            log.warn("New employee {} is not available (working hours or absence) at the requested time", newEmployeeId);
+            throw new BookingService.AppointmentConflictException(
+                    "The selected employee is not available at this time");
+        }
+
+        UUID oldEmployeeId = appointment.getEmployeeId();
+        appointment.setEmployeeId(newEmployeeId);
+        Appointment updated = appointmentRepository.save(appointment);
+        log.info("Appointment {} reassigned from employee {} to {}", id, oldEmployeeId, newEmployeeId);
 
         try { auditService.logUpdate("Appointment", id, null, updated); } catch (Exception e) { log.error("Audit log failed: {}", e.getMessage()); }
 

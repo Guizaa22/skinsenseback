@@ -117,14 +117,12 @@ class ConcurrentBookingIntegrationTest {
         // Create identical booking requests for both clients
         AppointmentCreateRequest request1 = AppointmentCreateRequest.builder()
                 .serviceId(serviceId)
-                .employeeId(employeeId)
                 .startAt(appointmentTime)
                 .notes("Client 1 booking")
                 .build();
 
         AppointmentCreateRequest request2 = AppointmentCreateRequest.builder()
                 .serviceId(serviceId)
-                .employeeId(employeeId)
                 .startAt(appointmentTime)
                 .notes("Client 2 booking")
                 .build();
