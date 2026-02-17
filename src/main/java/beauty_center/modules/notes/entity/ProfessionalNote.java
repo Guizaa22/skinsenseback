@@ -24,6 +24,7 @@ public class ProfessionalNote {
 
     @Id
     @Column(name = "id", columnDefinition = "UUID")
+    @Builder.Default
     private UUID id = UUID.randomUUID();
 
     @Column(name = "appointment_id", nullable = false, columnDefinition = "UUID")

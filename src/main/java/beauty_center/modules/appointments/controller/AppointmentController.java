@@ -117,7 +117,7 @@ public class AppointmentController {
      * - ADMIN: can book for any client (specify clientId)
      */
     @PostMapping
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('CLIENT', 'ADMIN')")
     public ResponseEntity<ApiResponse<AppointmentResponse>> createAppointment(
             @Valid @RequestBody AppointmentCreateRequest request) {
 
@@ -160,7 +160,8 @@ public class AppointmentController {
 
     /**
      * Update/reschedule appointment.
-     * Only ADMIN and EMPLOYEE can reschedule appointments.
+     * - ADMIN: can reschedule any appointment
+     * - EMPLOYEE: can only reschedule their own assigned appointments
      */
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
@@ -169,6 +170,17 @@ public class AppointmentController {
             @Valid @RequestBody AppointmentUpdateRequest request) {
 
         log.info("Update appointment {} requested by: {}", id, currentUser.getUsername());
+
+        // Employee ownership check
+        if (currentUser.hasRole("EMPLOYEE") && !currentUser.hasRole("ADMIN")) {
+            Appointment existing = appointmentService.getAppointmentById(id)
+                    .orElseThrow(() -> new IllegalArgumentException("Appointment not found: " + id));
+            if (!existing.getEmployeeId().equals(currentUser.getUserId())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(ApiResponse.error("You can only reschedule your own appointments",
+                                HttpStatus.FORBIDDEN.value()));
+            }
+        }
 
         try {
             Appointment appointment = appointmentService.updateAppointment(
@@ -194,7 +206,8 @@ public class AppointmentController {
     /**
      * Cancel appointment.
      * - CLIENT: can cancel own appointments
-     * - EMPLOYEE/ADMIN: can cancel any appointment
+     * - EMPLOYEE: can cancel only their assigned appointments
+     * - ADMIN: can cancel any appointment
      */
     @PostMapping("/{id}/cancel")
     @PreAuthorize("isAuthenticated()")
@@ -207,10 +220,12 @@ public class AppointmentController {
         Appointment appointment = appointmentService.getAppointmentById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Appointment not found: " + id));
 
-        // Check access: client can cancel own, employee/admin can cancel any
         UUID currentUserId = currentUser.getUserId();
-        boolean isClient = appointment.getClientId().equals(currentUserId);
-        boolean canCancel = isClient || currentUser.hasAnyRole("EMPLOYEE", "ADMIN");
+        boolean isAdmin = currentUser.hasRole("ADMIN");
+        boolean isOwnClient = appointment.getClientId().equals(currentUserId);
+        boolean isAssignedEmployee = appointment.getEmployeeId().equals(currentUserId)
+                && currentUser.hasRole("EMPLOYEE");
+        boolean canCancel = isAdmin || isOwnClient || isAssignedEmployee;
 
         if (!canCancel) {
             log.warn("User {} attempted to cancel appointment {} without permission", currentUserId, id);
@@ -231,12 +246,24 @@ public class AppointmentController {
 
     /**
      * Mark appointment as completed.
-     * Only EMPLOYEE and ADMIN can complete appointments.
+     * - ADMIN: can complete any appointment
+     * - EMPLOYEE: can only complete their own assigned appointments
      */
     @PostMapping("/{id}/complete")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<Void>> completeAppointment(@PathVariable UUID id) {
         log.info("Complete appointment {} requested by: {}", id, currentUser.getUsername());
+
+        // Employee ownership check
+        if (currentUser.hasRole("EMPLOYEE") && !currentUser.hasRole("ADMIN")) {
+            Appointment existing = appointmentService.getAppointmentById(id)
+                    .orElseThrow(() -> new IllegalArgumentException("Appointment not found: " + id));
+            if (!existing.getEmployeeId().equals(currentUser.getUserId())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(ApiResponse.error("You can only complete your own appointments",
+                                HttpStatus.FORBIDDEN.value()));
+            }
+        }
 
         try {
             appointmentService.completeAppointment(id);

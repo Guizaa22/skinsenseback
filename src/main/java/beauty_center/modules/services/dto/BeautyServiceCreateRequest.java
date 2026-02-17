@@ -1,5 +1,6 @@
 package beauty_center.modules.services.dto;
 
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -31,7 +32,7 @@ public class BeautyServiceCreateRequest {
     private Integer durationMinutes;
 
     @NotNull(message = "Price is required")
-    @Min(value = 0, message = "Price must be positive")
+    @DecimalMin(value = "0.0", message = "Price must be zero or positive")
     private BigDecimal price;
 
     // Optional specialty ID

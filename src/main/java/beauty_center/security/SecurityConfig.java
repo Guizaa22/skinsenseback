@@ -8,6 +8,7 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -42,7 +43,10 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // Public auth endpoints
                 .requestMatchers("/api/auth/login").permitAll()
+                .requestMatchers("/api/auth/register").permitAll()
                 .requestMatchers("/api/auth/refresh").permitAll()
+                // Public service catalog (read-only for unauthenticated users)
+                .requestMatchers(HttpMethod.GET, "/api/services", "/api/services/**").permitAll()
                 // Public SMS unsubscribe endpoint (no auth required)
                 .requestMatchers("/api/consent/unsubscribe/**").permitAll()
                 // API documentation (public)

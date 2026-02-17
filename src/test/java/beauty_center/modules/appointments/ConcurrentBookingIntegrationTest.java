@@ -6,7 +6,10 @@ import beauty_center.modules.scheduling.dto.WorkingTimeSlotRequest;
 import beauty_center.modules.scheduling.entity.WorkingTimeSlot;
 import beauty_center.modules.scheduling.repository.WorkingTimeSlotRepository;
 import beauty_center.modules.services.entity.BeautyService;
+import beauty_center.modules.services.entity.BeautyServiceEmployee;
+import beauty_center.modules.services.repository.BeautyServiceEmployeeRepository;
 import beauty_center.modules.services.repository.BeautyServiceRepository;
+import beauty_center.modules.users.entity.AuthProvider;
 import beauty_center.modules.users.entity.Role;
 import beauty_center.modules.users.entity.UserAccount;
 import beauty_center.modules.users.repository.UserAccountRepository;
@@ -63,6 +66,9 @@ class ConcurrentBookingIntegrationTest {
     private BeautyServiceRepository beautyServiceRepository;
 
     @Autowired
+    private BeautyServiceEmployeeRepository beautyServiceEmployeeRepository;
+
+    @Autowired
     private WorkingTimeSlotRepository workingTimeSlotRepository;
 
     @Autowired
@@ -91,6 +97,13 @@ class ConcurrentBookingIntegrationTest {
 
         // Create a beauty service (60 minutes)
         serviceId = createBeautyService("Facial Treatment", 60, new BigDecimal("50.00"));
+
+        // Link employee to service (eligibility)
+        beautyServiceEmployeeRepository.save(BeautyServiceEmployee.builder()
+                .id(UUID.randomUUID())
+                .beautyServiceId(serviceId)
+                .employeeId(employeeId)
+                .build());
 
         // Login and get tokens for both clients
         clientToken1 = loginAndGetToken("client1@test.com", "Client1@123");
@@ -216,6 +229,8 @@ class ConcurrentBookingIntegrationTest {
                 .passwordHash(passwordEncoder.encode(password))
                 .active(true)
                 .role(role)
+                .provider(AuthProvider.LOCAL)
+                .emailVerified(false)
                 .build();
 
         UserAccount saved = userAccountRepository.save(user);

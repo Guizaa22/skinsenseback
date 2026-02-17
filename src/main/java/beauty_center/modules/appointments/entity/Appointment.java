@@ -23,6 +23,7 @@ public class Appointment {
 
     @Id
     @Column(name = "id", columnDefinition = "UUID")
+    @Builder.Default
     private UUID id = UUID.randomUUID();
 
     @Column(name = "client_id", nullable = false, columnDefinition = "UUID")
@@ -42,6 +43,7 @@ public class Appointment {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
+    @Builder.Default
     private AppointmentStatus status = AppointmentStatus.CONFIRMED;
 
     @Column(name = "cancellation_reason")

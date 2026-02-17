@@ -1,5 +1,6 @@
 package beauty_center.modules.auth.config;
 
+import beauty_center.modules.users.entity.AuthProvider;
 import beauty_center.modules.users.entity.Role;
 import beauty_center.modules.users.entity.UserAccount;
 import beauty_center.modules.users.repository.UserAccountRepository;
@@ -76,6 +77,8 @@ public class AuthBootstrapConfig {
                 .passwordHash(passwordEncoder.encode(password))
                 .active(true)
                 .role(role)
+                .emailVerified(true)
+                .provider(AuthProvider.LOCAL)
                 .build();
 
             userAccountRepository.save(user);

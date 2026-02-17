@@ -23,6 +23,7 @@ public class NotificationRule {
 
     @Id
     @Column(name = "id", columnDefinition = "UUID")
+    @Builder.Default
     private UUID id = UUID.randomUUID();
 
     @Column(name = "beauty_service_id", columnDefinition = "UUID")
@@ -38,6 +39,7 @@ public class NotificationRule {
     private Integer offsetHours;  // for reminders: -24, -2, etc.
 
     @Column(name = "is_enabled", nullable = false)
+    @Builder.Default
     private boolean isEnabled = true;
 
     @Column(name = "created_at", nullable = false, updatable = false)

@@ -26,6 +26,7 @@ public class UserAccount {
 
     @Id
     @Column(name = "id", columnDefinition = "UUID")
+    @Builder.Default
     private UUID id = UUID.randomUUID();
 
     @Column(name = "full_name", nullable = false)
@@ -41,11 +42,21 @@ public class UserAccount {
     private String passwordHash;
 
     @Column(name = "is_active", nullable = false)
+    @Builder.Default
     private boolean active = true;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false)
     private Role role;
+
+    @Column(name = "email_verified", nullable = false)
+    @Builder.Default
+    private boolean emailVerified = false;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "provider", nullable = false)
+    @Builder.Default
+    private AuthProvider provider = AuthProvider.LOCAL;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;

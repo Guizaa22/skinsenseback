@@ -25,6 +25,7 @@ public class ClientFile {
 
     @Id
     @Column(name = "id", columnDefinition = "UUID")
+    @Builder.Default
     private UUID id = UUID.randomUUID();
 
     @Column(name = "client_id", nullable = false, columnDefinition = "UUID", unique = true)
@@ -65,9 +66,11 @@ public class ClientFile {
 
     // ===== Consent Section =====
     @Column(name = "photo_consent_for_followup")
+    @Builder.Default
     private boolean photoConsentForFollowup = false;
 
     @Column(name = "photo_consent_for_marketing")
+    @Builder.Default
     private boolean photoConsentForMarketing = false;
 
     @Column(name = "created_at", nullable = false, updatable = false)

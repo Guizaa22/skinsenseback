@@ -1,5 +1,6 @@
 package beauty_center.common.error;
 
+import beauty_center.common.api.ApiResponse;
 import beauty_center.modules.appointments.service.BookingService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -11,214 +12,89 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Global exception handler for REST API.
- * Converts exceptions to standardized ApiError responses with timezone-aware timestamps.
+ * All responses use the unified ApiResponse contract: { success, message, data }.
  */
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiError> handleMethodArgumentNotValidException(
-            MethodArgumentNotValidException ex,
-            HttpServletRequest request) {
+    public ResponseEntity<ApiResponse<Void>> handleMethodArgumentNotValidException(
+            MethodArgumentNotValidException ex) {
 
-        List<String> details = new ArrayList<>();
-        ex.getBindingResult().getAllErrors().forEach(error ->
-            details.add(error.getDefaultMessage())
-        );
+        String details = ex.getBindingResult().getAllErrors().stream()
+            .map(e -> e.getDefaultMessage())
+            .collect(Collectors.joining("; "));
 
-        ApiError apiError = ApiError.builder()
-            .status(HttpStatus.BAD_REQUEST.value())
-            .message("Validation failed")
-            .error("VALIDATION_ERROR")
-            .errorCode("VALIDATION_FAILED")
-            .timestamp(OffsetDateTime.now())
-            .path(request.getRequestURI())
-            .details(details)
-            .build();
-
-        return ResponseEntity
-            .status(HttpStatus.BAD_REQUEST)
-            .body(apiError);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .body(ApiResponse.error("Validation failed: " + details, HttpStatus.BAD_REQUEST.value()));
     }
 
     @ExceptionHandler(ValidationException.class)
-    public ResponseEntity<ApiError> handleValidationException(
-            ValidationException ex,
-            HttpServletRequest request) {
-
-        List<String> details = new ArrayList<>();
-        if (ex.getFieldName() != null) {
-            details.add(String.format("Field '%s' with value '%s' is invalid",
-                ex.getFieldName(), ex.getRejectedValue()));
-        }
-
-        ApiError apiError = ApiError.builder()
-            .status(HttpStatus.BAD_REQUEST.value())
-            .message(ex.getMessage())
-            .error("VALIDATION_ERROR")
-            .errorCode("VALIDATION_FAILED")
-            .timestamp(OffsetDateTime.now())
-            .path(request.getRequestURI())
-            .details(details)
-            .build();
-
-        return ResponseEntity
-            .status(HttpStatus.BAD_REQUEST)
-            .body(apiError);
+    public ResponseEntity<ApiResponse<Void>> handleValidationException(ValidationException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .body(ApiResponse.error(ex.getMessage(), HttpStatus.BAD_REQUEST.value()));
     }
 
     @ExceptionHandler(EntityNotFoundException.class)
-    public ResponseEntity<ApiError> handleEntityNotFoundException(
-            EntityNotFoundException ex,
-            HttpServletRequest request) {
-
+    public ResponseEntity<ApiResponse<Void>> handleEntityNotFoundException(EntityNotFoundException ex) {
         log.warn("Entity not found: {}", ex.getMessage());
-
-        ApiError apiError = ApiError.builder()
-            .status(HttpStatus.NOT_FOUND.value())
-            .message(ex.getMessage())
-            .error("NOT_FOUND")
-            .errorCode("ENTITY_NOT_FOUND")
-            .timestamp(OffsetDateTime.now())
-            .path(request.getRequestURI())
-            .build();
-
-        return ResponseEntity
-            .status(HttpStatus.NOT_FOUND)
-            .body(apiError);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            .body(ApiResponse.error(ex.getMessage(), HttpStatus.NOT_FOUND.value()));
     }
 
     @ExceptionHandler(BusinessRuleViolationException.class)
-    public ResponseEntity<ApiError> handleBusinessRuleViolationException(
-            BusinessRuleViolationException ex,
-            HttpServletRequest request) {
-
+    public ResponseEntity<ApiResponse<Void>> handleBusinessRuleViolationException(BusinessRuleViolationException ex) {
         log.warn("Business rule violated: {}", ex.getMessage());
-
-        ApiError apiError = ApiError.builder()
-            .status(HttpStatus.CONFLICT.value())
-            .message(ex.getMessage())
-            .error("CONFLICT")
-            .errorCode(ex.getErrorCode())
-            .timestamp(OffsetDateTime.now())
-            .path(request.getRequestURI())
-            .build();
-
-        return ResponseEntity
-            .status(HttpStatus.CONFLICT)
-            .body(apiError);
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(ApiResponse.error(ex.getMessage(), HttpStatus.CONFLICT.value()));
     }
 
     @ExceptionHandler(BookingService.AppointmentConflictException.class)
-    public ResponseEntity<ApiError> handleAppointmentConflictException(
-            BookingService.AppointmentConflictException ex,
-            HttpServletRequest request) {
-
+    public ResponseEntity<ApiResponse<Void>> handleAppointmentConflictException(
+            BookingService.AppointmentConflictException ex) {
         log.warn("Appointment conflict: {}", ex.getMessage());
-
-        ApiError apiError = ApiError.builder()
-            .status(HttpStatus.CONFLICT.value())
-            .message(ex.getMessage())
-            .error("CONFLICT")
-            .errorCode("APPOINTMENT_CONFLICT")
-            .timestamp(OffsetDateTime.now())
-            .path(request.getRequestURI())
-            .build();
-
-        return ResponseEntity
-            .status(HttpStatus.CONFLICT)
-            .body(apiError);
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(ApiResponse.error(ex.getMessage(), HttpStatus.CONFLICT.value()));
     }
 
     @ExceptionHandler(AuthenticationException.class)
-    public ResponseEntity<ApiError> handleAuthenticationException(
-            AuthenticationException ex,
-            HttpServletRequest request) {
-
+    public ResponseEntity<ApiResponse<Void>> handleAuthenticationException(AuthenticationException ex) {
         log.warn("Authentication failed: {}", ex.getMessage());
-
-        ApiError apiError = ApiError.builder()
-            .status(HttpStatus.UNAUTHORIZED.value())
-            .message("Authentication failed")
-            .error("UNAUTHORIZED")
-            .errorCode("AUTHENTICATION_FAILED")
-            .timestamp(OffsetDateTime.now())
-            .path(request.getRequestURI())
-            .build();
-
-        return ResponseEntity
-            .status(HttpStatus.UNAUTHORIZED)
-            .body(apiError);
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+            .body(ApiResponse.error("Authentication failed", HttpStatus.UNAUTHORIZED.value()));
     }
 
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ApiError> handleAccessDeniedException(
-            AccessDeniedException ex,
-            HttpServletRequest request) {
-
+    public ResponseEntity<ApiResponse<Void>> handleAccessDeniedException(AccessDeniedException ex) {
         log.warn("Access denied: {}", ex.getMessage());
-
-        ApiError apiError = ApiError.builder()
-            .status(HttpStatus.FORBIDDEN.value())
-            .message("Access denied")
-            .error("FORBIDDEN")
-            .errorCode("ACCESS_DENIED")
-            .timestamp(OffsetDateTime.now())
-            .path(request.getRequestURI())
-            .build();
-
-        return ResponseEntity
-            .status(HttpStatus.FORBIDDEN)
-            .body(apiError);
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+            .body(ApiResponse.error("Access denied", HttpStatus.FORBIDDEN.value()));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ApiError> handleIllegalArgumentException(
-            IllegalArgumentException ex,
-            HttpServletRequest request) {
-
+    public ResponseEntity<ApiResponse<Void>> handleIllegalArgumentException(IllegalArgumentException ex) {
         log.warn("Invalid argument: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .body(ApiResponse.error(ex.getMessage(), HttpStatus.BAD_REQUEST.value()));
+    }
 
-        ApiError apiError = ApiError.builder()
-            .status(HttpStatus.BAD_REQUEST.value())
-            .message(ex.getMessage())
-            .error("INVALID_ARGUMENT")
-            .errorCode("INVALID_ARGUMENT")
-            .timestamp(OffsetDateTime.now())
-            .path(request.getRequestURI())
-            .build();
-
-        return ResponseEntity
-            .status(HttpStatus.BAD_REQUEST)
-            .body(apiError);
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ApiResponse<Void>> handleIllegalStateException(IllegalStateException ex) {
+        log.warn("Invalid state: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .body(ApiResponse.error(ex.getMessage(), HttpStatus.BAD_REQUEST.value()));
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiError> handleGenericException(
-            Exception ex,
-            HttpServletRequest request) {
-
+    public ResponseEntity<ApiResponse<Void>> handleGenericException(Exception ex) {
         log.error("Unexpected error occurred", ex);
-
-        ApiError apiError = ApiError.builder()
-            .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
-            .message("Internal server error")
-            .error("INTERNAL_ERROR")
-            .errorCode("INTERNAL_SERVER_ERROR")
-            .timestamp(OffsetDateTime.now())
-            .path(request.getRequestURI())
-            .build();
-
-        return ResponseEntity
-            .status(HttpStatus.INTERNAL_SERVER_ERROR)
-            .body(apiError);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .body(ApiResponse.error("Internal server error", HttpStatus.INTERNAL_SERVER_ERROR.value()));
     }
 
 }

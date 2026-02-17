@@ -8,6 +8,7 @@ import beauty_center.modules.scheduling.entity.WorkingTimeSlot;
 import beauty_center.modules.scheduling.repository.AbsenceRepository;
 import beauty_center.modules.scheduling.repository.WorkingTimeSlotRepository;
 import beauty_center.modules.services.entity.BeautyService;
+import beauty_center.modules.services.repository.BeautyServiceEmployeeRepository;
 import beauty_center.modules.services.repository.BeautyServiceRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -43,6 +44,7 @@ public class AvailabilityService {
     private final AbsenceRepository absenceRepository;
     private final AppointmentRepository appointmentRepository;
     private final BeautyServiceRepository beautyServiceRepository;
+    private final BeautyServiceEmployeeRepository beautyServiceEmployeeRepository;
 
     /**
      * Get available time slots for an employee and service.
@@ -67,6 +69,12 @@ public class AvailabilityService {
 
         if (!service.isActive()) {
             throw new IllegalArgumentException("Service is not active: " + serviceId);
+        }
+
+        // Verify employee is allowed to perform this service
+        if (!beautyServiceEmployeeRepository.existsByBeautyServiceIdAndEmployeeId(serviceId, employeeId)) {
+            throw new IllegalArgumentException(
+                    "Employee is not authorized to perform this service");
         }
 
         // Calculate end date
@@ -167,7 +175,7 @@ public class AvailabilityService {
         LocalTime endTime = workingSlot.getEndTime();
 
         while (currentTime.plusMinutes(serviceDurationMinutes).compareTo(endTime) <= 0) {
-            OffsetDateTime slotStart = OffsetDateTime.of(date, currentTime, ZoneOffset.ofHours(1));
+            OffsetDateTime slotStart = date.atTime(currentTime).atZone(DEFAULT_ZONE).toOffsetDateTime();
             OffsetDateTime slotEnd = slotStart.plusMinutes(serviceDurationMinutes);
 
             slots.add(TimeSlot.builder()

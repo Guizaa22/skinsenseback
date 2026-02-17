@@ -23,6 +23,7 @@ public class BeautyServiceEmployee {
 
     @Id
     @Column(name = "id", columnDefinition = "UUID")
+    @Builder.Default
     private UUID id = UUID.randomUUID();
 
     @Column(name = "beauty_service_id", nullable = false, columnDefinition = "UUID")

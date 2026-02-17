@@ -23,12 +23,14 @@ public class ClientConsent {
 
     @Id
     @Column(name = "id", columnDefinition = "UUID")
+    @Builder.Default
     private UUID id = UUID.randomUUID();
 
     @Column(name = "client_id", nullable = false, columnDefinition = "UUID", unique = true)
     private UUID clientId;
 
     @Column(name = "sms_opt_in", nullable = false)
+    @Builder.Default
     private boolean smsOptIn = true;
 
     @Column(name = "sms_unsub_token")
