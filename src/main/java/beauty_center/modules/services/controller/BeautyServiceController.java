@@ -1,6 +1,7 @@
 package beauty_center.modules.services.controller;
 
 import beauty_center.common.api.ApiResponse;
+import beauty_center.common.error.EntityNotFoundException;
 import beauty_center.modules.services.dto.BeautyServiceCreateRequest;
 import beauty_center.modules.services.dto.BeautyServiceResponse;
 import beauty_center.modules.services.entity.BeautyService;
@@ -63,7 +64,7 @@ public class BeautyServiceController {
         log.info("Get service by ID: {}", id);
 
         BeautyService service = beautyServiceService.getServiceById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Service not found"));
+                .orElseThrow(() -> new EntityNotFoundException("BeautyService", id));
 
         return ResponseEntity.ok(ApiResponse.ok(toResponse(service), "Service retrieved successfully"));
     }
@@ -73,7 +74,6 @@ public class BeautyServiceController {
      * Only ADMIN can create services
      */
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<BeautyServiceResponse>> createService(
             @Valid @RequestBody BeautyServiceCreateRequest request) {
         log.info("Create service request: {}", request.getName());

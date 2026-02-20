@@ -1,5 +1,6 @@
 package beauty_center.modules.appointments.service;
 
+import beauty_center.common.error.EntityNotFoundException;
 import beauty_center.modules.appointments.entity.Appointment;
 import beauty_center.modules.appointments.entity.AppointmentStatus;
 import beauty_center.modules.appointments.repository.AppointmentRepository;
@@ -70,7 +71,7 @@ public class BookingService {
 
         // Validate client exists
         if (!userAccountRepository.existsById(clientId)) {
-            throw new IllegalArgumentException("Client not found: " + clientId);
+            throw new EntityNotFoundException("Client", clientId);
         }
 
         // Get service and validate
@@ -154,12 +155,12 @@ public class BookingService {
         try {
             // Validate client exists
             if (!userAccountRepository.existsById(clientId)) {
-                throw new IllegalArgumentException("Client not found: " + clientId);
+                throw new EntityNotFoundException("Client", clientId);
             }
 
             // Validate employee exists
             if (!userAccountRepository.existsById(employeeId)) {
-                throw new IllegalArgumentException("Employee not found: " + employeeId);
+                throw new EntityNotFoundException("Employee", employeeId);
             }
 
             // Get service and validate

@@ -1,5 +1,6 @@
 package beauty_center.modules.appointments.service;
 
+import beauty_center.common.error.EntityNotFoundException;
 import beauty_center.modules.appointments.entity.Appointment;
 import beauty_center.modules.appointments.entity.AppointmentStatus;
 import beauty_center.modules.appointments.repository.AppointmentRepository;
@@ -168,7 +169,7 @@ public class AppointmentService {
 
         // Validate new employee exists
         if (!userAccountRepository.existsById(newEmployeeId)) {
-            throw new IllegalArgumentException("Employee not found: " + newEmployeeId);
+            throw new EntityNotFoundException("Employee", newEmployeeId);
         }
 
         // Check if new employee is allowed to perform the service

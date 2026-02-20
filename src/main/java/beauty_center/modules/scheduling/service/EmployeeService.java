@@ -1,5 +1,6 @@
 package beauty_center.modules.scheduling.service;
 
+import beauty_center.common.error.EntityNotFoundException;
 import beauty_center.modules.scheduling.dto.EmployeeCreateRequest;
 import beauty_center.modules.scheduling.dto.EmployeeResponse;
 import beauty_center.modules.scheduling.dto.EmployeeUpdateRequest;
@@ -88,7 +89,7 @@ public class EmployeeService {
 
         UserAccount employee = userAccountRepository.findById(id)
             .filter(user -> user.getRole() == Role.EMPLOYEE)
-            .orElseThrow(() -> new IllegalArgumentException("Employee not found: " + id));
+            .orElseThrow(() -> new EntityNotFoundException("Employee", id));
 
         // Update fields if provided
         if (request.getFullName() != null) {
@@ -122,7 +123,7 @@ public class EmployeeService {
         log.info("Activating employee: {}", id);
         UserAccount employee = userAccountRepository.findById(id)
             .filter(user -> user.getRole() == Role.EMPLOYEE)
-            .orElseThrow(() -> new IllegalArgumentException("Employee not found: " + id));
+            .orElseThrow(() -> new EntityNotFoundException("Employee", id));
 
         employee.setActive(true);
         userAccountRepository.save(employee);
@@ -136,7 +137,7 @@ public class EmployeeService {
         log.info("Deactivating employee: {}", id);
         UserAccount employee = userAccountRepository.findById(id)
             .filter(user -> user.getRole() == Role.EMPLOYEE)
-            .orElseThrow(() -> new IllegalArgumentException("Employee not found: " + id));
+            .orElseThrow(() -> new EntityNotFoundException("Employee", id));
 
         employee.setActive(false);
         userAccountRepository.save(employee);

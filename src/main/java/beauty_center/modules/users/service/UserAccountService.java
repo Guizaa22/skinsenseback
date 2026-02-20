@@ -1,5 +1,6 @@
 package beauty_center.modules.users.service;
 
+import beauty_center.common.error.EntityNotFoundException;
 import beauty_center.modules.users.entity.Role;
 import beauty_center.modules.users.entity.UserAccount;
 import beauty_center.modules.users.repository.UserAccountRepository;
@@ -74,7 +75,7 @@ public class UserAccountService {
      */
     public UserAccount updateUser(UUID id, UserAccount updates) {
         UserAccount existing = userAccountRepository.findById(id)
-            .orElseThrow(() -> new IllegalArgumentException("User not found"));
+            .orElseThrow(() -> new EntityNotFoundException("User", id));
 
         if (updates.getFullName() != null && !updates.getFullName().trim().isEmpty()) {
             existing.setFullName(updates.getFullName());

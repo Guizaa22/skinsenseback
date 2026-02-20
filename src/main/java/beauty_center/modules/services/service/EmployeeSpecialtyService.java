@@ -1,5 +1,6 @@
 package beauty_center.modules.services.service;
 
+import beauty_center.common.error.EntityNotFoundException;
 import beauty_center.modules.services.entity.EmployeeSpecialty;
 import beauty_center.modules.services.entity.Specialty;
 import beauty_center.modules.services.repository.EmployeeSpecialtyRepository;
@@ -31,12 +32,12 @@ public class EmployeeSpecialtyService {
     public EmployeeSpecialty assignSpecialtyToEmployee(UUID employeeId, UUID specialtyId) {
         // Validate employee exists
         if (!userAccountRepository.existsById(employeeId)) {
-            throw new IllegalArgumentException("Employee not found");
+            throw new EntityNotFoundException("Employee", employeeId);
         }
 
         // Validate specialty exists
         if (!specialtyRepository.existsById(specialtyId)) {
-            throw new IllegalArgumentException("Specialty not found");
+            throw new EntityNotFoundException("Specialty", specialtyId);
         }
 
         // Check if already assigned

@@ -1,5 +1,6 @@
 package beauty_center.modules.scheduling.service;
 
+import beauty_center.common.error.EntityNotFoundException;
 import beauty_center.modules.appointments.entity.Appointment;
 import beauty_center.modules.appointments.repository.AppointmentRepository;
 import beauty_center.modules.scheduling.dto.TimeSlot;
@@ -79,7 +80,7 @@ public class AvailabilityService {
 
                 // Validate and retrieve service
                 BeautyService service = beautyServiceRepository.findById(serviceId)
-                                .orElseThrow(() -> new IllegalArgumentException("Service not found: " + serviceId));
+                                .orElseThrow(() -> new EntityNotFoundException("BeautyService", serviceId));
 
                 if (!service.isActive()) {
                         throw new IllegalArgumentException("Service is not active: " + serviceId);
@@ -135,7 +136,7 @@ public class AvailabilityService {
 
                 // Delegate to existing logic...
                 BeautyService service = beautyServiceRepository.findById(serviceId)
-                                .orElseThrow(() -> new IllegalArgumentException("Service not found: " + serviceId));
+                                .orElseThrow(() -> new EntityNotFoundException("BeautyService", serviceId));
 
                 if (!service.isActive()) {
                         throw new IllegalArgumentException("Service is not active: " + serviceId);

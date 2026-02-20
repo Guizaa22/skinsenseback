@@ -1,6 +1,7 @@
 package beauty_center.modules.users.controller;
 
 import beauty_center.common.api.ApiResponse;
+import beauty_center.common.error.EntityNotFoundException;
 import beauty_center.modules.users.dto.UserCreateRequest;
 import beauty_center.modules.users.dto.UserResponse;
 import beauty_center.modules.users.entity.Role;
@@ -44,7 +45,7 @@ public class UserController {
 
         String email = currentUser.getUsername();
         UserAccount user = userAccountService.getUserByEmail(email)
-            .orElseThrow(() -> new IllegalArgumentException("User not found"));
+            .orElseThrow(() -> new EntityNotFoundException("User", email));
 
         return ResponseEntity.ok(
             ApiResponse.ok(UserResponse.fromEntity(user), "User profile retrieved successfully")
@@ -60,7 +61,7 @@ public class UserController {
         log.info("User details requested for ID: {}", id);
 
         UserAccount user = userAccountService.getUserById(id)
-            .orElseThrow(() -> new IllegalArgumentException("User not found"));
+            .orElseThrow(() -> new EntityNotFoundException("User", id));
 
         if (!currentUser.hasRole("ADMIN") && !user.getEmail().equals(currentUser.getUsername())) {
             throw new AccessDeniedException("Access denied: You can only view your own profile");

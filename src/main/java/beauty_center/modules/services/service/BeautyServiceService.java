@@ -1,5 +1,6 @@
 package beauty_center.modules.services.service;
 
+import beauty_center.common.error.EntityNotFoundException;
 import beauty_center.modules.audit.service.AuditService;
 import beauty_center.modules.services.entity.BeautyService;
 import beauty_center.modules.services.entity.BeautyServiceEmployee;
@@ -70,7 +71,7 @@ public class BeautyServiceService {
 
         // Validate specialty exists if provided
         if (service.getSpecialtyId() != null && !specialtyRepository.existsById(service.getSpecialtyId())) {
-            throw new IllegalArgumentException("Specialty not found");
+            throw new EntityNotFoundException("Specialty", service.getSpecialtyId());
         }
 
         BeautyService created = beautyServiceRepository.save(service);
@@ -90,7 +91,7 @@ public class BeautyServiceService {
      */
     public BeautyService updateService(UUID id, BeautyService updates, List<UUID> allowedEmployeeIds) {
         BeautyService existing = beautyServiceRepository.findById(id)
-            .orElseThrow(() -> new IllegalArgumentException("Service not found"));
+            .orElseThrow(() -> new EntityNotFoundException("BeautyService", id));
 
         // Validate price is positive
         if (updates.getPrice().compareTo(BigDecimal.ZERO) < 0) {
@@ -104,7 +105,7 @@ public class BeautyServiceService {
 
         // Validate specialty exists if provided
         if (updates.getSpecialtyId() != null && !specialtyRepository.existsById(updates.getSpecialtyId())) {
-            throw new IllegalArgumentException("Specialty not found");
+            throw new EntityNotFoundException("Specialty", updates.getSpecialtyId());
         }
 
         existing.setName(updates.getName());
@@ -168,7 +169,7 @@ public class BeautyServiceService {
     public List<BeautyService> getServicesByEmployee(UUID employeeId) {
         // Validate employee exists
         if (!userAccountRepository.existsById(employeeId)) {
-            throw new IllegalArgumentException("Employee not found");
+            throw new EntityNotFoundException("Employee", employeeId);
         }
 
         // Get all service IDs the employee is allowed to perform
@@ -195,7 +196,7 @@ public class BeautyServiceService {
         for (UUID employeeId : employeeIds) {
             // Validate employee exists
             if (!userAccountRepository.existsById(employeeId)) {
-                throw new IllegalArgumentException("Employee not found: " + employeeId);
+                throw new EntityNotFoundException("Employee", employeeId);
             }
 
             // Skip if already assigned

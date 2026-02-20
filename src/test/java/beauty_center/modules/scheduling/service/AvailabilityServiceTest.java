@@ -1,5 +1,7 @@
 package beauty_center.modules.scheduling.service;
 
+import beauty_center.common.error.EntityNotFoundException;
+
 import beauty_center.modules.appointments.entity.Appointment;
 import beauty_center.modules.appointments.entity.AppointmentStatus;
 import beauty_center.modules.appointments.repository.AppointmentRepository;
@@ -105,7 +107,7 @@ class AvailabilityServiceTest {
         when(beautyServiceRepository.findById(serviceId)).thenReturn(Optional.empty());
 
         // When & Then
-        assertThrows(IllegalArgumentException.class, () ->
+        assertThrows(EntityNotFoundException.class, () ->
                 availabilityService.getAvailableSlots(employeeId, serviceId, testDate, 1));
     }
 

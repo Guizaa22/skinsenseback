@@ -1,6 +1,7 @@
 package beauty_center.modules.services.controller;
 
 import beauty_center.common.api.ApiResponse;
+import beauty_center.common.error.EntityNotFoundException;
 import beauty_center.modules.services.dto.SpecialtyCreateRequest;
 import beauty_center.modules.services.dto.SpecialtyResponse;
 import beauty_center.modules.services.entity.Specialty;
@@ -53,7 +54,7 @@ public class SpecialtyController {
         log.info("Get specialty by ID: {}", id);
 
         Specialty specialty = specialtyService.getSpecialtyById(id)
-            .orElseThrow(() -> new IllegalArgumentException("Specialty not found"));
+            .orElseThrow(() -> new EntityNotFoundException("Specialty", id));
 
         return ResponseEntity.ok(ApiResponse.ok(toResponse(specialty), "Specialty retrieved successfully"));
     }

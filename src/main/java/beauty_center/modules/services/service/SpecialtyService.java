@@ -1,5 +1,6 @@
 package beauty_center.modules.services.service;
 
+import beauty_center.common.error.EntityNotFoundException;
 import beauty_center.modules.services.entity.Specialty;
 import beauty_center.modules.services.repository.SpecialtyRepository;
 import lombok.RequiredArgsConstructor;
@@ -49,7 +50,7 @@ public class SpecialtyService {
      */
     public Specialty updateSpecialty(UUID id, Specialty updates) {
         Specialty existing = specialtyRepository.findById(id)
-            .orElseThrow(() -> new IllegalArgumentException("Specialty not found"));
+            .orElseThrow(() -> new EntityNotFoundException("Specialty", id));
 
         // Check if name is being changed and if it conflicts with another specialty
         if (!existing.getName().equals(updates.getName()) && 
@@ -68,7 +69,7 @@ public class SpecialtyService {
      */
     public void deleteSpecialty(UUID id) {
         if (!specialtyRepository.existsById(id)) {
-            throw new IllegalArgumentException("Specialty not found");
+            throw new EntityNotFoundException("Specialty", id);
         }
         specialtyRepository.deleteById(id);
     }
