@@ -4,6 +4,7 @@ import beauty_center.modules.auth.dto.LoginRequest;
 import beauty_center.modules.clientfile.dto.*;
 import beauty_center.modules.clientfile.entity.ClientFile;
 import beauty_center.modules.clientfile.repository.ClientFileRepository;
+import beauty_center.modules.users.entity.AuthProvider;
 import beauty_center.modules.users.entity.Role;
 import beauty_center.modules.users.entity.UserAccount;
 import beauty_center.modules.users.repository.UserAccountRepository;
@@ -71,6 +72,8 @@ public class ClientFileControllerIntegrationTest {
                                 .passwordHash(passwordEncoder.encode("Client@123"))
                                 .role(Role.CLIENT)
                                 .active(true)
+                                .provider(AuthProvider.LOCAL)
+                                .emailVerified(false)
                                 .build();
                 userAccountRepository.save(testClient);
 
@@ -83,6 +86,8 @@ public class ClientFileControllerIntegrationTest {
                                 .passwordHash(passwordEncoder.encode("Employee@123"))
                                 .role(Role.EMPLOYEE)
                                 .active(true)
+                                .provider(AuthProvider.LOCAL)
+                                .emailVerified(false)
                                 .build();
                 userAccountRepository.save(testEmployee);
 
@@ -178,6 +183,8 @@ public class ClientFileControllerIntegrationTest {
                                 .passwordHash(passwordEncoder.encode("Client@123"))
                                 .role(Role.CLIENT)
                                 .active(true)
+                                .provider(AuthProvider.LOCAL)
+                                .emailVerified(false)
                                 .build();
                 userAccountRepository.save(otherClient);
 

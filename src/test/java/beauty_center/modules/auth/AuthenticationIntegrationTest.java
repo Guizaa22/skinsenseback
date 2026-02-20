@@ -3,6 +3,7 @@ package beauty_center.modules.auth;
 import beauty_center.modules.auth.dto.LoginRequest;
 import beauty_center.modules.auth.dto.LoginResponse;
 import beauty_center.modules.auth.dto.UserPrincipalDto;
+import beauty_center.modules.users.entity.AuthProvider;
 import beauty_center.modules.users.entity.Role;
 import beauty_center.modules.users.entity.UserAccount;
 import beauty_center.modules.users.repository.UserAccountRepository;
@@ -203,6 +204,8 @@ class AuthenticationIntegrationTest {
                 .passwordHash(passwordEncoder.encode(password))
                 .active(true)
                 .role(role)
+                .provider(AuthProvider.LOCAL)
+                .emailVerified(false)
                 .build();
 
             userAccountRepository.save(user);

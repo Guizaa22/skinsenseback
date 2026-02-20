@@ -32,6 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 /**
@@ -72,6 +73,10 @@ class AvailabilityServiceTest {
         serviceId = UUID.randomUUID();
         testDate = LocalDate.of(2024, 2, 15); // Thursday
         tunisiaOffset = ZoneOffset.ofHours(1); // Tunisia is UTC+1
+
+        // By default, employee is eligible for the service (lenient: not all tests reach this check)
+        lenient().when(beautyServiceEmployeeRepository.existsByBeautyServiceIdAndEmployeeId(any(), any()))
+                .thenReturn(true);
 
         // Create test service with 60-minute duration
         testService = BeautyService.builder()

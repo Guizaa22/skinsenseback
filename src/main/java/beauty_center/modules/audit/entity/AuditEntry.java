@@ -24,6 +24,7 @@ public class AuditEntry {
 
     @Id
     @Column(name = "id", columnDefinition = "UUID")
+    @Builder.Default
     private UUID id = UUID.randomUUID();
 
     @Column(name = "entity_type", nullable = false)

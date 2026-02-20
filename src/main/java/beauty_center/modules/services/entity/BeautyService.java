@@ -25,6 +25,7 @@ public class BeautyService {
 
     @Id
     @Column(name = "id", columnDefinition = "UUID")
+    @Builder.Default
     private UUID id = UUID.randomUUID();
 
     @Column(name = "specialty_id", columnDefinition = "UUID")
@@ -43,6 +44,7 @@ public class BeautyService {
     private BigDecimal price;
 
     @Column(name = "is_active", nullable = false)
+    @Builder.Default
     private boolean isActive = true;
 
     @Column(name = "created_at", nullable = false, updatable = false)

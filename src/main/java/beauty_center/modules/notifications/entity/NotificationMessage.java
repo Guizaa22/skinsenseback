@@ -24,6 +24,7 @@ public class NotificationMessage {
 
     @Id
     @Column(name = "id", columnDefinition = "UUID")
+    @Builder.Default
     private UUID id = UUID.randomUUID();
 
     @Column(name = "client_id", nullable = false, columnDefinition = "UUID")

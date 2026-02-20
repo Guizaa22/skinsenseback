@@ -2,6 +2,7 @@ package beauty_center.modules.scheduling;
 
 import beauty_center.modules.auth.dto.LoginRequest;
 import beauty_center.modules.scheduling.dto.*;
+import beauty_center.modules.users.entity.AuthProvider;
 import beauty_center.modules.users.entity.Role;
 import beauty_center.modules.users.entity.UserAccount;
 import beauty_center.modules.users.repository.UserAccountRepository;
@@ -380,6 +381,8 @@ class AdminEmployeeControllerIntegrationTest {
                 .passwordHash(passwordEncoder.encode(password))
                 .active(true)
                 .role(role)
+                .provider(AuthProvider.LOCAL)
+                .emailVerified(false)
                 .build();
 
             userAccountRepository.save(user);
@@ -412,6 +415,8 @@ class AdminEmployeeControllerIntegrationTest {
             .passwordHash(passwordEncoder.encode("Password@123"))
             .active(true)
             .role(Role.EMPLOYEE)
+            .provider(AuthProvider.LOCAL)
+            .emailVerified(false)
             .build();
 
         return userAccountRepository.save(employee).getId();

@@ -30,6 +30,7 @@ public class AvailabilityRequest {
     private LocalDate date;
 
     @Min(value = 1, message = "Days must be at least 1")
+    @Builder.Default
     private Integer days = 1; // Default to 1 day
 
 }

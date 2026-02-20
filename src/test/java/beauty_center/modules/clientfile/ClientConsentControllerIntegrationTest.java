@@ -4,6 +4,7 @@ import beauty_center.modules.auth.dto.LoginRequest;
 import beauty_center.modules.clientfile.dto.ClientConsentUpdateRequest;
 import beauty_center.modules.clientfile.entity.ClientConsent;
 import beauty_center.modules.clientfile.repository.ClientConsentRepository;
+import beauty_center.modules.users.entity.AuthProvider;
 import beauty_center.modules.users.entity.Role;
 import beauty_center.modules.users.entity.UserAccount;
 import beauty_center.modules.users.repository.UserAccountRepository;
@@ -70,6 +71,8 @@ public class ClientConsentControllerIntegrationTest {
                                 .passwordHash(passwordEncoder.encode("Client@123"))
                                 .role(Role.CLIENT)
                                 .active(true)
+                                .provider(AuthProvider.LOCAL)
+                                .emailVerified(false)
                                 .build();
                 userAccountRepository.save(testClient);
 

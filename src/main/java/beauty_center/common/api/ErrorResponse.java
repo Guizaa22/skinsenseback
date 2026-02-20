@@ -15,6 +15,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ErrorResponse {
 
+    @Builder.Default
     private boolean success = false;
     private int status;
     private String message;

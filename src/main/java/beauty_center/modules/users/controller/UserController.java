@@ -4,6 +4,7 @@ import beauty_center.common.api.ApiResponse;
 import beauty_center.common.error.EntityNotFoundException;
 import beauty_center.modules.users.dto.UserCreateRequest;
 import beauty_center.modules.users.dto.UserResponse;
+import beauty_center.modules.users.dto.UserUpdateRequest;
 import beauty_center.modules.users.entity.Role;
 import beauty_center.modules.users.entity.UserAccount;
 import beauty_center.modules.users.service.UserAccountService;
@@ -17,14 +18,14 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
- * User management controller with role-based access control.
- *
- * - ADMIN: Can create users, activate/deactivate accounts
- * - EMPLOYEE: Can view own profile
- * - CLIENT: Can view own profile
+ * User management controller.
+ * - ADMIN: Full CRUD on all users, list by role, activate/deactivate
+ * - EMPLOYEE/CLIENT: View and update own profile
  */
 @RestController
 @RequestMapping("/api/users")
@@ -43,98 +44,163 @@ public class UserController {
     public ResponseEntity<ApiResponse<UserResponse>> getProfile() {
         log.info("User profile requested by: {}", currentUser.getUsername());
 
-        String email = currentUser.getUsername();
-        UserAccount user = userAccountService.getUserByEmail(email)
-            .orElseThrow(() -> new EntityNotFoundException("User", email));
+        UUID userId = currentUser.getUserId();
+        UserAccount user = userAccountService.getUserById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("User", userId));
 
         return ResponseEntity.ok(
-            ApiResponse.ok(UserResponse.fromEntity(user), "User profile retrieved successfully")
+                ApiResponse.ok(UserResponse.fromEntity(user), "Profile retrieved successfully")
         );
     }
 
     /**
-     * Get user by ID (ADMIN can view any, others can view their own).
+     * Update own profile (name and phone).
+     */
+    @PutMapping("/profile")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<UserResponse>> updateProfile(
+            @Valid @RequestBody UserUpdateRequest request) {
+
+        UUID userId = currentUser.getUserId();
+        UserAccount updated = userAccountService.updateUser(
+                userId, request.getFullName(), request.getPhone());
+
+        return ResponseEntity.ok(
+                ApiResponse.ok(UserResponse.fromEntity(updated), "Profile updated successfully")
+        );
+    }
+
+    /**
+     * Get user by ID.
+     * ADMIN can view any user; others can only view their own.
      */
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or isAuthenticated()")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<UserResponse>> getUserById(@PathVariable UUID id) {
-        log.info("User details requested for ID: {}", id);
+        log.info("User details requested for ID: {} by {}", id, currentUser.getUsername());
 
         UserAccount user = userAccountService.getUserById(id)
-            .orElseThrow(() -> new EntityNotFoundException("User", id));
+                .orElseThrow(() -> new EntityNotFoundException("User", id));
 
-        if (!currentUser.hasRole("ADMIN") && !user.getEmail().equals(currentUser.getUsername())) {
-            throw new AccessDeniedException("Access denied: You can only view your own profile");
+        if (!currentUser.hasRole("ADMIN") && !currentUser.getUserId().equals(id)) {
+            throw new AccessDeniedException("You can only view your own profile");
         }
 
         return ResponseEntity.ok(
-            ApiResponse.ok(UserResponse.fromEntity(user), "User retrieved successfully")
+                ApiResponse.ok(UserResponse.fromEntity(user), "User retrieved successfully")
         );
     }
 
     /**
-     * Create new user account (ADMIN only).
+     * List all users (ADMIN only).
+     */
+    @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<List<UserResponse>>> getAllUsers() {
+        List<UserResponse> users = userAccountService.getAllUsers().stream()
+                .map(UserResponse::fromEntity)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(ApiResponse.ok(users, "Users retrieved successfully"));
+    }
+
+    /**
+     * List employees (ADMIN only).
+     */
+    @GetMapping("/employees")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<List<UserResponse>>> listEmployees() {
+        List<UserResponse> employees = userAccountService.getUsersByRole(Role.EMPLOYEE).stream()
+                .map(UserResponse::fromEntity)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(ApiResponse.ok(employees, "Employees retrieved successfully"));
+    }
+
+    /**
+     * List clients (ADMIN only).
+     */
+    @GetMapping("/clients")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<List<UserResponse>>> listClients() {
+        List<UserResponse> clients = userAccountService.getUsersByRole(Role.CLIENT).stream()
+                .map(UserResponse::fromEntity)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(ApiResponse.ok(clients, "Clients retrieved successfully"));
+    }
+
+    /**
+     * Create a new user (ADMIN only).
+     * Supports creating ADMIN/EMPLOYEE/CLIENT.
+     * If request.role is missing/null, default to CLIENT (matches Code1 behavior).
      */
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<UserResponse>> createUser(@Valid @RequestBody UserCreateRequest request) {
+    public ResponseEntity<ApiResponse<UserResponse>> createUser(
+            @Valid @RequestBody UserCreateRequest request) {
+
         log.info("Create user request from ADMIN: {}", currentUser.getUsername());
 
-        try {
-            UserAccount newUser = UserAccount.builder()
-                .fullName(request.getFullName())
-                .email(request.getEmail())
-                .phone(request.getPhone())
-                .role(Role.CLIENT)
-                .build();
+        Role role = parseRoleOrDefault(request.getRole());
 
-            UserAccount created = userAccountService.createUser(newUser, request.getPassword());
+        UserAccount created = userAccountService.createUser(
+                request.getFullName(),
+                request.getEmail(),
+                request.getPhone(),
+                request.getPassword(),
+                role
+        );
 
-            return ResponseEntity.status(HttpStatus.CREATED)
+        return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.ok(UserResponse.fromEntity(created), "User created successfully"));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error(e.getMessage(), HttpStatus.BAD_REQUEST.value()));
-        }
     }
 
     /**
-     * Deactivate user account (ADMIN only).
+     * Update any user (ADMIN only).
+     */
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<UserResponse>> updateUser(
+            @PathVariable UUID id,
+            @Valid @RequestBody UserUpdateRequest request) {
+
+        UserAccount updated = userAccountService.updateUser(
+                id, request.getFullName(), request.getPhone());
+
+        return ResponseEntity.ok(
+                ApiResponse.ok(UserResponse.fromEntity(updated), "User updated successfully"));
+    }
+
+    /**
+     * Deactivate user (ADMIN only).
      */
     @PostMapping("/{id}/deactivate")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deactivateUser(@PathVariable UUID id) {
-        log.warn("Deactivate user request from ADMIN for user: {} by {}", id, currentUser.getUsername());
-
-        try {
-            userAccountService.deactivateUser(id);
-            return ResponseEntity.ok(
-                ApiResponse.ok(null, "User deactivated successfully")
-            );
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(ApiResponse.error("User not found", HttpStatus.NOT_FOUND.value()));
-        }
+        userAccountService.deactivateUser(id);
+        return ResponseEntity.ok(ApiResponse.ok(null, "User deactivated successfully"));
     }
 
     /**
-     * Activate user account (ADMIN only).
+     * Activate user (ADMIN only).
      */
     @PostMapping("/{id}/activate")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> activateUser(@PathVariable UUID id) {
-        log.info("Activate user request from ADMIN for user: {} by {}", id, currentUser.getUsername());
-
-        try {
-            userAccountService.activateUser(id);
-            return ResponseEntity.ok(
-                ApiResponse.ok(null, "User activated successfully")
-            );
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(ApiResponse.error("User not found", HttpStatus.NOT_FOUND.value()));
-        }
+        userAccountService.activateUser(id);
+        return ResponseEntity.ok(ApiResponse.ok(null, "User activated successfully"));
     }
 
-
+    private Role parseRoleOrDefault(String roleRaw) {
+        if (roleRaw == null || roleRaw.isBlank()) {
+            return Role.CLIENT; // keeps Code1 default behavior
+        }
+        try {
+            return Role.valueOf(roleRaw.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            // keep consistent with your ApiResponse signature used elsewhere (message + statusCode)
+            throw new IllegalArgumentException("Invalid role. Must be ADMIN, EMPLOYEE, or CLIENT");
+        }
+    }
 }

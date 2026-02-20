@@ -25,6 +25,7 @@ public class WorkingTimeSlot {
 
     @Id
     @Column(name = "id", columnDefinition = "UUID")
+    @Builder.Default
     private UUID id = UUID.randomUUID();
 
     @Column(name = "employee_id", nullable = false, columnDefinition = "UUID")

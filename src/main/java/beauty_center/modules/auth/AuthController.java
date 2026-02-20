@@ -4,6 +4,7 @@ import beauty_center.common.api.ApiResponse;
 import beauty_center.modules.auth.dto.LoginRequest;
 import beauty_center.modules.auth.dto.LoginResponse;
 import beauty_center.modules.auth.dto.RefreshRequest;
+import beauty_center.modules.auth.dto.RegisterRequest;
 import beauty_center.modules.auth.dto.UserPrincipalDto;
 import beauty_center.modules.auth.service.AuthService;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,36 @@ import jakarta.validation.Valid;
 public class AuthController {
 
     private final AuthService authService;
+
+    /**
+     * Register a new client user.
+     * Public endpoint (no authentication required).
+     * Creates user with CLIENT role, empty ClientFile, and ClientConsent.
+     * Returns JWT tokens for immediate sign-in.
+     *
+     * @param request Registration data (fullName, email, phone, password)
+     * @return LoginResponse with accessToken and refreshToken (201 Created)
+     */
+    @PostMapping("/register")
+    public ResponseEntity<ApiResponse<LoginResponse>> register(@Valid @RequestBody RegisterRequest request) {
+        log.info("Registration request for email: {}", request.getEmail());
+
+        try {
+            LoginResponse response = authService.register(request);
+            log.info("User registered successfully: {}", request.getEmail());
+
+            return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.ok(response, "Registration successful"));
+        } catch (IllegalArgumentException e) {
+            log.warn("Registration failed for email: {} - {}", request.getEmail(), e.getMessage());
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error(e.getMessage(), HttpStatus.CONFLICT.value()));
+        } catch (Exception e) {
+            log.error("Registration error for email: {}", request.getEmail(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.error("Registration failed", HttpStatus.INTERNAL_SERVER_ERROR.value()));
+        }
+    }
 
     /**
      * Login endpoint - authenticate user and return JWT tokens.

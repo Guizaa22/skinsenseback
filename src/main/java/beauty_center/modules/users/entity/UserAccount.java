@@ -51,6 +51,15 @@ public class UserAccount {
     @Column(name = "role", nullable = false)
     private Role role;
 
+    @Column(name = "email_verified", nullable = false)
+    @Builder.Default
+    private boolean emailVerified = false;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "provider", nullable = false)
+    @Builder.Default
+    private AuthProvider provider = AuthProvider.LOCAL;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 
