@@ -93,7 +93,7 @@ public class UserAccountService {
         if (user.getProvider() == null) {
             user.setProvider(AuthProvider.LOCAL);
         }
-        if (user.getEmailVerified() == null) {
+        if (!user.isEmailVerified()) {
             user.setEmailVerified(false);
         }
 

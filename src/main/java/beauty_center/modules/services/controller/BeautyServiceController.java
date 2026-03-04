@@ -74,6 +74,7 @@ public class BeautyServiceController {
      * Only ADMIN can create services
      */
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<BeautyServiceResponse>> createService(
             @Valid @RequestBody BeautyServiceCreateRequest request) {
         log.info("Create service request: {}", request.getName());
