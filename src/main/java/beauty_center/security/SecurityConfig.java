@@ -31,34 +31,35 @@ public class SecurityConfig {
     private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http,
+            org.springframework.web.cors.CorsConfigurationSource corsConfigurationSource) throws Exception {
         http
-            .csrf(AbstractHttpConfigurer::disable)
-            .cors(cors -> {})
-            .sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .exceptionHandling(exceptions -> exceptions
-                .authenticationEntryPoint(jwtAuthenticationEntryPoint)
-                .accessDeniedHandler(jwtAccessDeniedHandler))
-            .authorizeHttpRequests(auth -> auth
-                // Public auth endpoints
-                .requestMatchers("/api/auth/login").permitAll()
-                .requestMatchers("/api/auth/register").permitAll()
-                .requestMatchers("/api/auth/refresh").permitAll()
-                // Public services endpoint (read-only)
-                .requestMatchers("GET", "/api/services").permitAll()
-                .requestMatchers("GET", "/api/services/**").permitAll()
-                // Public SMS unsubscribe endpoint (no auth required)
-                .requestMatchers("/api/consent/unsubscribe/**").permitAll()
-                // API documentation (public)
-                .requestMatchers("/v3/api-docs/**").permitAll()
-                .requestMatchers("/swagger-ui/**").permitAll()
-                .requestMatchers("/swagger-ui.html").permitAll()
-                // Health check (public)
-                .requestMatchers("/actuator/health").permitAll()
-                // All other endpoints require authentication
-                .anyRequest().authenticated())
-            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                .csrf(AbstractHttpConfigurer::disable)
+                .cors(cors -> cors.configurationSource(corsConfigurationSource))
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint(jwtAuthenticationEntryPoint)
+                        .accessDeniedHandler(jwtAccessDeniedHandler))
+                .authorizeHttpRequests(auth -> auth
+                        // Public auth endpoints
+                        .requestMatchers("/api/auth/login").permitAll()
+                        .requestMatchers("/api/auth/register").permitAll()
+                        .requestMatchers("/api/auth/refresh").permitAll()
+                        // Public services endpoint (read-only)
+                        .requestMatchers("GET", "/api/services").permitAll()
+                        .requestMatchers("GET", "/api/services/**").permitAll()
+                        // Public SMS unsubscribe endpoint (no auth required)
+                        .requestMatchers("/api/consent/unsubscribe/**").permitAll()
+                        // API documentation (public)
+                        .requestMatchers("/v3/api-docs/**").permitAll()
+                        .requestMatchers("/swagger-ui/**").permitAll()
+                        .requestMatchers("/swagger-ui.html").permitAll()
+                        // Health check (public)
+                        .requestMatchers("/actuator/health").permitAll()
+                        // All other endpoints require authentication
+                        .anyRequest().authenticated())
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
@@ -74,7 +75,8 @@ public class SecurityConfig {
 
     /**
      * Password encoder bean using BCrypt.
-     * Ensures passwords are hashed before storage and validated during authentication.
+     * Ensures passwords are hashed before storage and validated during
+     * authentication.
      */
     @Bean
     public PasswordEncoder passwordEncoder() {
