@@ -16,7 +16,7 @@ jobs:
         env:
           POSTGRES_DB: beauty_center_db
           POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
+          POSTGRES_PASSWORD: mouadhmb12
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -42,7 +42,7 @@ jobs:
       env:
         SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/beauty_center_db
         SPRING_DATASOURCE_USERNAME: postgres
-        SPRING_DATASOURCE_PASSWORD: postgres
+        SPRING_DATASOURCE_PASSWORD: mouadhmb12
       run: mvn test
 
     - name: Package JAR
