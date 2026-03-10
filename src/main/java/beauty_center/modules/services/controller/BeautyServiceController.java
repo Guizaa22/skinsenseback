@@ -57,7 +57,7 @@ public class BeautyServiceController {
 
     /**
      * Get service by ID
-     * Accessible by all authenticated users
+     * Accessible by all authenticated users and unauthenticated users (public endpoint)
      */
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<BeautyServiceResponse>> getServiceById(@PathVariable UUID id) {
