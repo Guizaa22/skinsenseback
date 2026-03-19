@@ -1,0 +1,11 @@
+{
+  "name": "beauty-center-project",
+  "private": true,
+  "description": "Beauty Center: backend (8050) + frontend (separate port). Run backend with ./run.ps1 or mvnw spring-boot:run. Run frontend from its folder: npm run dev.",
+  "scripts": {
+    "backend": "mvnw spring-boot:run",
+    "dev:frontend": "npm run dev --prefix frontend",
+    "build:frontend": "npm run build --prefix frontend",
+    "install:frontend": "npm install --prefix frontend"
+  }
+}

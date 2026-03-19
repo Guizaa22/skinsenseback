@@ -1,6 +1,6 @@
 # Beauty Center API - Routes Documentation
 
-**Base URL:** `http://localhost:8080`
+**Base URL:** `http://localhost:8050`
 **API Version:** 1.0.0
 **Authentication:** JWT Bearer Token (except public endpoints)
 
@@ -1219,26 +1219,26 @@ All API responses follow a standardized format using the `ApiResponse` wrapper:
 
 ### Login Example
 ```bash
-curl -X POST http://localhost:8080/api/auth/login \
+curl -X POST http://localhost:8050/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"admin@beautycenter.com","password":"Admin@123"}'
 ```
 
 ### Authenticated Request Example
 ```bash
-curl -X GET http://localhost:8080/api/users/profile \
+curl -X GET http://localhost:8050/api/users/profile \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN_HERE"
 ```
 
 ### Check Availability Example
 ```bash
-curl -X GET "http://localhost:8080/api/availability?employeeId=550e8400-e29b-41d4-a716-446655440000&serviceId=660e8400-e29b-41d4-a716-446655440001&date=2024-02-15&days=7" \
+curl -X GET "http://localhost:8050/api/availability?employeeId=550e8400-e29b-41d4-a716-446655440000&serviceId=660e8400-e29b-41d4-a716-446655440001&date=2024-02-15&days=7" \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN_HERE"
 ```
 
 ### Create Appointment Example
 ```bash
-curl -X POST http://localhost:8080/api/appointments \
+curl -X POST http://localhost:8050/api/appointments \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN_HERE" \
   -H "Content-Type: application/json" \
   -d '{
@@ -1251,7 +1251,7 @@ curl -X POST http://localhost:8080/api/appointments \
 
 ### Cancel Appointment Example
 ```bash
-curl -X POST http://localhost:8080/api/appointments/appointment-uuid/cancel \
+curl -X POST http://localhost:8050/api/appointments/appointment-uuid/cancel \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN_HERE" \
   -H "Content-Type: application/json" \
   -d '{
@@ -1263,8 +1263,8 @@ curl -X POST http://localhost:8080/api/appointments/appointment-uuid/cancel \
 
 ## 📚 Additional Resources
 
-- **Swagger UI:** `http://localhost:8080/swagger-ui.html` (when application is running)
-- **OpenAPI Spec:** `http://localhost:8080/v3/api-docs`
+- **Swagger UI:** `http://localhost:8050/swagger-ui.html` (when application is running)
+- **OpenAPI Spec:** `http://localhost:8050/v3/api-docs`
 - **Postman Collection:** Import `postman_auth_collection.json` for pre-configured requests
 
 ---

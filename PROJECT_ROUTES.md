@@ -1,6 +1,6 @@
 # Beauty Center - Complete API Routes Documentation
 
-**Base URL:** `http://localhost:8080`  
+**Base URL:** `http://localhost:8050`  
 **API Version:** 1.0.0  
 **Last Updated:** 2026-02-17
 

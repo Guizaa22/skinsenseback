@@ -59,9 +59,9 @@ class DatabaseConnectionTest {
         try (Connection connection = dataSource.getConnection()) {
             String databaseName = connection.getCatalog();
             assertNotNull(databaseName, "Database name should not be null");
-            // Accept H2 test database or PostgreSQL beauty_center_db
+            // Accept H2 test database or PostgreSQL beauty_center
             boolean isValidDatabase = "testdb".equalsIgnoreCase(databaseName) ||
-                                     "beauty_center_db".equals(databaseName) ||
+                                     "beauty_center".equals(databaseName) ||
                                      databaseName.contains("testdb"); // H2 in-memory
             assertTrue(isValidDatabase, "Should be connected to a valid test database, got: " + databaseName);
             System.out.println("✓ Connected to database: " + databaseName);

@@ -129,8 +129,8 @@ After successful build:
    java -jar target/beauty-center-app.jar
 
 3. Test endpoints:
-   curl http://localhost:8080/api/services
-   curl -H "Authorization: Bearer YOUR_TOKEN" http://localhost:8080/api/appointments
+   curl http://localhost:8050/api/services
+   curl -H "Authorization: Bearer YOUR_TOKEN" http://localhost:8050/api/appointments
 
 4. Check logs for errors:
    tail -f logs/application.log

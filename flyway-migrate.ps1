@@ -16,7 +16,7 @@ if (Test-Path .env) {
     exit 1
 }
 
-# Run Flyway migration
+
 Write-Host "`nRunning Flyway migration..." -ForegroundColor Cyan
 mvn flyway:migrate
 

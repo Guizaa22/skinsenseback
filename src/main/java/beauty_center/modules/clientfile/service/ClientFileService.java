@@ -133,6 +133,10 @@ public class ClientFileService {
             updateAestheticProcedureHistorySection(existingFile, request.getAestheticProcedureHistory());
         }
 
+        if (request.getProfessionalAssessment() != null) {
+            updateProfessionalAssessmentSection(existingFile, request.getProfessionalAssessment());
+        }
+
         if (request.getPhotoConsentForFollowup() != null) {
             existingFile.setPhotoConsentForFollowup(request.getPhotoConsentForFollowup());
         }
@@ -192,14 +196,62 @@ public class ClientFileService {
                         .careType(clientFile.getCareType())
                         .skincareRoutine(clientFile.getSkincareRoutine())
                         .habits(clientFile.getHabits())
+                        .dateOfBirth(clientFile.getDateOfBirth())
+                        .address(clientFile.getAddress())
+                        .profession(clientFile.getProfession())
+                        .howFoundUs(clientFile.getHowFoundUs())
+                        .consultationTypes(clientFile.getConsultationTypes())
+                        .consultationTypeAutre(clientFile.getConsultationTypeAutre())
                         .build())
                 .medicalHistory(MedicalHistoryDto.builder()
                         .medicalBackground(clientFile.getMedicalBackground())
                         .currentTreatments(clientFile.getCurrentTreatments())
                         .allergiesAndReactions(clientFile.getAllergiesAndReactions())
+                        .grossesse(clientFile.getGrossesse())
+                        .diabete(clientFile.getDiabete())
+                        .maladieAutoImmune(clientFile.getMaladieAutoImmune())
+                        .troublesHormonaux(clientFile.getTroublesHormonaux())
+                        .problemsCicatrisation(clientFile.getProblemsCicatrisation())
+                        .herpes(clientFile.getHerpes())
+                        .epilepsie(clientFile.getEpilepsie())
+                        .cancer(clientFile.getCancer())
+                        .maladiesDermatologiques(clientFile.getMaladiesDermatologiques())
+                        .interventionChirurgicale(clientFile.getInterventionChirurgicale())
+                        .autreAntecedent(clientFile.getAutreAntecedent())
+                        .isotretinoine(clientFile.getIsotretinoine())
+                        .corticoides(clientFile.getCorticoides())
+                        .anticoagulants(clientFile.getAnticoagulants())
+                        .hormones(clientFile.getHormones())
+                        .antibiotiques(clientFile.getAntibiotiques())
+                        .dateArretMedicament(clientFile.getDateArretMedicament())
+                        .allergiesMedicamenteuses(clientFile.getAllergiesMedicamenteuses())
+                        .allergiesCosmetiques(clientFile.getAllergiesCosmetiques())
+                        .reactionsPostSoinsAnterieures(clientFile.getReactionsPostSoinsAnterieures())
+                        .detailsAllergies(clientFile.getDetailsAllergies())
+                        .tabac(clientFile.getTabac())
+                        .expositionSolaire(clientFile.getExpositionSolaire())
+                        .cabineUV(clientFile.getCabineUV())
+                        .sportIntensif(clientFile.getSportIntensif())
+                        .stressImportant(clientFile.getStressImportant())
                         .build())
                 .aestheticProcedureHistory(AestheticProcedureHistoryDto.builder()
                         .procedures(clientFile.getProcedures())
+                        .peeling(clientFile.getHistPeeling())
+                        .laser(clientFile.getHistLaser())
+                        .microneedlingHistory(clientFile.getHistMicroneedling())
+                        .injections(clientFile.getHistInjections())
+                        .dateDernierSoin(clientFile.getDateDernierSoin())
+                        .detailsInjections(clientFile.getDetailsInjections())
+                        .build())
+                .professionalAssessment(ProfessionalAssessmentDto.builder()
+                        .diagnosticCutane(clientFile.getDiagnosticCutane())
+                        .phototype(clientFile.getPhototype())
+                        .indicationRetenue(clientFile.getIndicationRetenue())
+                        .soinRealise(clientFile.getSoinRealise())
+                        .produitsParametres(clientFile.getProduitsParametres())
+                        .reactionsImmediates(clientFile.getReactionsImmediates())
+                        .recommandationsPostSoin(clientFile.getRecommandationsPostSoin())
+                        .dateProchaineRdv(clientFile.getDateProchaineRdv())
                         .build())
                 .photoConsentForFollowup(clientFile.isPhotoConsentForFollowup())
                 .photoConsentForMarketing(clientFile.isPhotoConsentForMarketing())
@@ -257,48 +309,80 @@ public class ClientFileService {
      * Update intake section from DTO.
      */
     private void updateIntakeSection(ClientFile file, ClientIntakeDto dto) {
-        if (dto.getHowDidYouHearAboutUs() != null) {
-            file.setHowDidYouHearAboutUs(dto.getHowDidYouHearAboutUs());
-        }
-        if (dto.getConsultationReason() != null) {
-            file.setConsultationReason(dto.getConsultationReason());
-        }
-        if (dto.getObjective() != null) {
-            file.setObjective(dto.getObjective());
-        }
-        if (dto.getCareType() != null) {
-            file.setCareType(dto.getCareType());
-        }
-        if (dto.getSkincareRoutine() != null) {
-            file.setSkincareRoutine(dto.getSkincareRoutine());
-        }
-        if (dto.getHabits() != null) {
-            file.setHabits(dto.getHabits());
-        }
+        if (dto.getHowDidYouHearAboutUs() != null) file.setHowDidYouHearAboutUs(dto.getHowDidYouHearAboutUs());
+        if (dto.getConsultationReason() != null) file.setConsultationReason(dto.getConsultationReason());
+        if (dto.getObjective() != null) file.setObjective(dto.getObjective());
+        if (dto.getCareType() != null) file.setCareType(dto.getCareType());
+        if (dto.getSkincareRoutine() != null) file.setSkincareRoutine(dto.getSkincareRoutine());
+        if (dto.getHabits() != null) file.setHabits(dto.getHabits());
+        if (dto.getDateOfBirth() != null) file.setDateOfBirth(dto.getDateOfBirth());
+        if (dto.getAddress() != null) file.setAddress(dto.getAddress());
+        if (dto.getProfession() != null) file.setProfession(dto.getProfession());
+        if (dto.getHowFoundUs() != null) file.setHowFoundUs(dto.getHowFoundUs());
+        if (dto.getConsultationTypes() != null) file.setConsultationTypes(dto.getConsultationTypes());
+        if (dto.getConsultationTypeAutre() != null) file.setConsultationTypeAutre(dto.getConsultationTypeAutre());
     }
 
     /**
      * Update medical history section from DTO.
      */
     private void updateMedicalHistorySection(ClientFile file, MedicalHistoryDto dto) {
-        if (dto.getMedicalBackground() != null) {
-            file.setMedicalBackground(dto.getMedicalBackground());
-        }
-        if (dto.getCurrentTreatments() != null) {
-            file.setCurrentTreatments(dto.getCurrentTreatments());
-        }
-        if (dto.getAllergiesAndReactions() != null) {
-            file.setAllergiesAndReactions(dto.getAllergiesAndReactions());
-        }
+        if (dto.getMedicalBackground() != null) file.setMedicalBackground(dto.getMedicalBackground());
+        if (dto.getCurrentTreatments() != null) file.setCurrentTreatments(dto.getCurrentTreatments());
+        if (dto.getAllergiesAndReactions() != null) file.setAllergiesAndReactions(dto.getAllergiesAndReactions());
+        if (dto.getGrossesse() != null) file.setGrossesse(dto.getGrossesse());
+        if (dto.getDiabete() != null) file.setDiabete(dto.getDiabete());
+        if (dto.getMaladieAutoImmune() != null) file.setMaladieAutoImmune(dto.getMaladieAutoImmune());
+        if (dto.getTroublesHormonaux() != null) file.setTroublesHormonaux(dto.getTroublesHormonaux());
+        if (dto.getProblemsCicatrisation() != null) file.setProblemsCicatrisation(dto.getProblemsCicatrisation());
+        if (dto.getHerpes() != null) file.setHerpes(dto.getHerpes());
+        if (dto.getEpilepsie() != null) file.setEpilepsie(dto.getEpilepsie());
+        if (dto.getCancer() != null) file.setCancer(dto.getCancer());
+        if (dto.getMaladiesDermatologiques() != null) file.setMaladiesDermatologiques(dto.getMaladiesDermatologiques());
+        if (dto.getInterventionChirurgicale() != null) file.setInterventionChirurgicale(dto.getInterventionChirurgicale());
+        if (dto.getAutreAntecedent() != null) file.setAutreAntecedent(dto.getAutreAntecedent());
+        if (dto.getIsotretinoine() != null) file.setIsotretinoine(dto.getIsotretinoine());
+        if (dto.getCorticoides() != null) file.setCorticoides(dto.getCorticoides());
+        if (dto.getAnticoagulants() != null) file.setAnticoagulants(dto.getAnticoagulants());
+        if (dto.getHormones() != null) file.setHormones(dto.getHormones());
+        if (dto.getAntibiotiques() != null) file.setAntibiotiques(dto.getAntibiotiques());
+        if (dto.getDateArretMedicament() != null) file.setDateArretMedicament(dto.getDateArretMedicament());
+        if (dto.getAllergiesMedicamenteuses() != null) file.setAllergiesMedicamenteuses(dto.getAllergiesMedicamenteuses());
+        if (dto.getAllergiesCosmetiques() != null) file.setAllergiesCosmetiques(dto.getAllergiesCosmetiques());
+        if (dto.getReactionsPostSoinsAnterieures() != null) file.setReactionsPostSoinsAnterieures(dto.getReactionsPostSoinsAnterieures());
+        if (dto.getDetailsAllergies() != null) file.setDetailsAllergies(dto.getDetailsAllergies());
+        if (dto.getTabac() != null) file.setTabac(dto.getTabac());
+        if (dto.getExpositionSolaire() != null) file.setExpositionSolaire(dto.getExpositionSolaire());
+        if (dto.getCabineUV() != null) file.setCabineUV(dto.getCabineUV());
+        if (dto.getSportIntensif() != null) file.setSportIntensif(dto.getSportIntensif());
+        if (dto.getStressImportant() != null) file.setStressImportant(dto.getStressImportant());
     }
 
     /**
      * Update aesthetic procedure history section from DTO.
      */
     private void updateAestheticProcedureHistorySection(ClientFile file, AestheticProcedureHistoryDto dto) {
-        if (dto.getProcedures() != null) {
-            file.setProcedures(dto.getProcedures());
-        }
+        if (dto.getProcedures() != null) file.setProcedures(dto.getProcedures());
+        if (dto.getPeeling() != null) file.setHistPeeling(dto.getPeeling());
+        if (dto.getLaser() != null) file.setHistLaser(dto.getLaser());
+        if (dto.getMicroneedlingHistory() != null) file.setHistMicroneedling(dto.getMicroneedlingHistory());
+        if (dto.getInjections() != null) file.setHistInjections(dto.getInjections());
+        if (dto.getDateDernierSoin() != null) file.setDateDernierSoin(dto.getDateDernierSoin());
+        if (dto.getDetailsInjections() != null) file.setDetailsInjections(dto.getDetailsInjections());
+    }
+
+    /**
+     * Update professional assessment section from DTO (EMPLOYEE/ADMIN only).
+     */
+    private void updateProfessionalAssessmentSection(ClientFile file, ProfessionalAssessmentDto dto) {
+        if (dto.getDiagnosticCutane() != null) file.setDiagnosticCutane(dto.getDiagnosticCutane());
+        if (dto.getPhototype() != null) file.setPhototype(dto.getPhototype());
+        if (dto.getIndicationRetenue() != null) file.setIndicationRetenue(dto.getIndicationRetenue());
+        if (dto.getSoinRealise() != null) file.setSoinRealise(dto.getSoinRealise());
+        if (dto.getProduitsParametres() != null) file.setProduitsParametres(dto.getProduitsParametres());
+        if (dto.getReactionsImmediates() != null) file.setReactionsImmediates(dto.getReactionsImmediates());
+        if (dto.getRecommandationsPostSoin() != null) file.setRecommandationsPostSoin(dto.getRecommandationsPostSoin());
+        if (dto.getDateProchaineRdv() != null) file.setDateProchaineRdv(dto.getDateProchaineRdv());
     }
 
     /**

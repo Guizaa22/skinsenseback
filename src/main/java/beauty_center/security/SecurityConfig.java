@@ -49,6 +49,8 @@ public class SecurityConfig {
                         // Public services endpoint (read-only)
                         .requestMatchers("GET", "/api/services").permitAll()
                         .requestMatchers("GET", "/api/services/**").permitAll()
+                        .requestMatchers("GET", "/api/employees").permitAll()
+                        .requestMatchers("/api/photos/file/**").permitAll()
                         // Public SMS unsubscribe endpoint (no auth required)
                         .requestMatchers("/api/consent/unsubscribe/**").permitAll()
                         // API documentation (public)

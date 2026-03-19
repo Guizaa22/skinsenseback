@@ -30,6 +30,9 @@ public class ClientFileResponse {
     // Aesthetic Procedure History Section
     private AestheticProcedureHistoryDto aestheticProcedureHistory;
 
+    // Professional Assessment Section (EMPLOYEE/ADMIN only)
+    private ProfessionalAssessmentDto professionalAssessment;
+
     // Photo Consent
     private boolean photoConsentForFollowup;
     private boolean photoConsentForMarketing;

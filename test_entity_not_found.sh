@@ -23,11 +23,11 @@ test_endpoint() {
     echo "Testing: $description"
 
     if [ -z "$data" ]; then
-        response=$(curl -s -w "\n%{http_code}" -X $method http://localhost:8080$endpoint \
+        response=$(curl -s -w "\n%{http_code}" -X $method http://localhost:8050$endpoint \
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer test-token")
     else
-        response=$(curl -s -w "\n%{http_code}" -X $method http://localhost:8080$endpoint \
+        response=$(curl -s -w "\n%{http_code}" -X $method http://localhost:8050$endpoint \
             -H "Content-Type: application/json" \
             -d "$data" \
             -H "Authorization: Bearer test-token")

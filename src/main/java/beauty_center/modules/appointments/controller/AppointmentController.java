@@ -1,6 +1,7 @@
 package beauty_center.modules.appointments.controller;
 
 import beauty_center.common.api.ApiResponse;
+import beauty_center.common.error.EntityNotFoundException;
 import beauty_center.modules.appointments.dto.AppointmentCancelRequest;
 import beauty_center.modules.appointments.dto.AppointmentCreateRequest;
 import beauty_center.modules.appointments.dto.AppointmentReassignRequest;
@@ -8,8 +9,10 @@ import beauty_center.modules.appointments.dto.AppointmentResponse;
 import beauty_center.modules.appointments.dto.AppointmentUpdateRequest;
 import beauty_center.modules.appointments.entity.Appointment;
 import beauty_center.modules.appointments.entity.AppointmentStatus;
+import beauty_center.modules.appointments.repository.AppointmentRepository;
 import beauty_center.modules.appointments.service.AppointmentService;
 import beauty_center.modules.appointments.service.BookingService;
+import beauty_center.modules.notifications.service.NotificationService;
 import beauty_center.security.CurrentUser;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +21,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.OffsetDateTime;
@@ -40,6 +44,8 @@ public class AppointmentController {
 
     private final AppointmentService appointmentService;
     private final BookingService bookingService;
+    private final AppointmentRepository appointmentRepository;
+    private final NotificationService notificationService;
     private final CurrentUser currentUser;
 
     /**
@@ -57,29 +63,43 @@ public class AppointmentController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime to) {
 
-        log.info("Get appointments request by: {}", currentUser.getUsername());
+        try {
+            log.info("Get appointments request by: {}", currentUser.getUsername());
 
-        UUID currentUserId = currentUser.getUserId();
+            UUID currentUserId = currentUser.getUserId();
 
-        // Role-based filtering
-        if (currentUser.hasRole("CLIENT")) {
-            clientId = currentUserId;
-            employeeId = null;
-        } else if (currentUser.hasRole("EMPLOYEE") && !currentUser.hasRole("ADMIN")) {
-            employeeId = currentUserId;
-            if (clientId != null) {
-                log.debug("Employee {} filtering by client {}", currentUserId, clientId);
+            // Role-based filtering
+            if (currentUser.hasRole("CLIENT")) {
+                clientId = currentUserId;
+                employeeId = null;
+            } else if (currentUser.hasRole("EMPLOYEE") && !currentUser.hasRole("ADMIN")) {
+                employeeId = currentUserId;
+                if (clientId != null) {
+                    log.debug("Employee {} filtering by client {}", currentUserId, clientId);
+                }
             }
+            // ADMIN can use filters as provided
+
+            List<Appointment> appointments = appointmentService.getAppointments(clientId, employeeId, status, from, to);
+
+            List<AppointmentResponse> response = appointments.stream()
+                    .map(apt -> {
+                        try {
+                            return toResponse(apt);
+                        } catch (Exception e) {
+                            log.error("Error mapping appointment {}: {}", apt.getId(), e.getMessage());
+                            return null;
+                        }
+                    })
+                    .filter(apt -> apt != null)
+                    .collect(Collectors.toList());
+
+            return ResponseEntity.ok(ApiResponse.ok(response, "Appointments retrieved successfully"));
+        } catch (Exception e) {
+            log.error("GET /api/appointments FAILED: {}", e.getMessage(), e);
+            return ResponseEntity.status(500)
+                    .body(ApiResponse.error("Failed to load appointments: " + e.getMessage(), 500));
         }
-        // ADMIN can use filters as provided
-
-        List<Appointment> appointments = appointmentService.getAppointments(clientId, employeeId, status, from, to);
-
-        List<AppointmentResponse> response = appointments.stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
-
-        return ResponseEntity.ok(ApiResponse.ok(response, "Appointments retrieved successfully"));
     }
 
     /**
@@ -115,7 +135,7 @@ public class AppointmentController {
      * Client does not select employee; system assigns eligible available employee.
      */
     @PostMapping
-    @PreAuthorize("hasAnyRole('CLIENT', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('CLIENT', 'ADMIN', 'EMPLOYEE')")
     public ResponseEntity<ApiResponse<AppointmentResponse>> createAppointment(
             @Valid @RequestBody AppointmentCreateRequest request) {
 
@@ -125,10 +145,10 @@ public class AppointmentController {
 
         if (clientId == null) {
             clientId = currentUser.getUserId();
-        } else if (!currentUser.hasRole("ADMIN")) {
+        } else if (!currentUser.hasRole("ADMIN") && !currentUser.hasRole("EMPLOYEE")) {
             log.warn("Non-admin user {} attempted to book for client {}", currentUser.getUserId(), clientId);
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(ApiResponse.error("Only admins can book for other clients",
+                    .body(ApiResponse.error("Only admins and employees can book for other clients",
                             HttpStatus.FORBIDDEN.value()));
         }
 
@@ -138,6 +158,18 @@ public class AppointmentController {
                     request.getServiceId(),
                     request.getStartAt(),
                     request.getNotes());
+
+            if (currentUser.hasRole("ADMIN") || currentUser.hasRole("EMPLOYEE")) {
+                appointment.setStatus(AppointmentStatus.CONFIRMED);
+                appointment.setUpdatedAt(OffsetDateTime.now());
+                Appointment saved = appointmentRepository.saveAndFlush(appointment);
+                try {
+                    notificationService.processAppointmentCreated(saved);
+                } catch (Exception e) {
+                    log.warn("Notification failed: {}", e.getMessage());
+                }
+                appointment = saved;
+            }
 
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(ApiResponse.ok(toResponse(appointment), "Appointment created successfully"));
@@ -306,18 +338,62 @@ public class AppointmentController {
         }
     }
 
+    /**
+     * Confirm a pending appointment.
+     * EMPLOYEE (assigned) or ADMIN can confirm.
+     */
+    @PostMapping("/{id}/confirm")
+    @PreAuthorize("hasAnyRole('EMPLOYEE', 'ADMIN')")
+    @Transactional
+    public ResponseEntity<ApiResponse<AppointmentResponse>> confirmAppointment(
+            @PathVariable UUID id) {
+        log.info("Confirm appointment: {}", id);
+        Appointment appointment = appointmentRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Appointment not found: " + id));
+        appointment.setStatus(AppointmentStatus.CONFIRMED);
+        appointment.setUpdatedAt(OffsetDateTime.now());
+        Appointment saved = appointmentRepository.saveAndFlush(appointment);
+        log.info("Appointment {} confirmed, new status: {}", id, saved.getStatus());
+        try {
+            notificationService.processAppointmentCreated(saved);
+        } catch (Exception e) {
+            log.warn("Notification failed: {}", e.getMessage());
+        }
+        return ResponseEntity.ok(ApiResponse.ok(toResponse(saved), "Appointment confirmed"));
+    }
+
+    /**
+     * Reject a pending appointment.
+     * EMPLOYEE (assigned) or ADMIN can reject.
+     */
+    @PostMapping("/{id}/reject")
+    @PreAuthorize("hasAnyRole('EMPLOYEE', 'ADMIN')")
+    public ResponseEntity<ApiResponse<AppointmentResponse>> rejectAppointment(
+            @PathVariable UUID id,
+            @RequestBody(required = false) AppointmentCancelRequest request) {
+        log.info("Reject appointment request: {}", id);
+        Appointment appointment = appointmentService.getAppointmentById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Appointment not found: " + id));
+        appointment.setStatus(AppointmentStatus.CANCELED);
+        appointment.setCancellationReason(request != null ? request.getCancellationReason() : "Rejected by staff");
+        appointment.setUpdatedAt(OffsetDateTime.now());
+        appointmentRepository.save(appointment);
+        return ResponseEntity.ok(ApiResponse.ok(
+                toResponse(appointment), "Appointment rejected"));
+    }
+
     private AppointmentResponse toResponse(Appointment appointment) {
         return AppointmentResponse.builder()
-                .id(appointment.getId())
-                .clientId(appointment.getClientId())
-                .employeeId(appointment.getEmployeeId())
-                .serviceId(appointment.getBeautyServiceId())
-                .startAt(appointment.getStartAt())
-                .endAt(appointment.getEndAt())
-                .status(appointment.getStatus().name())
-                .cancellationReason(appointment.getCancellationReason())
-                .createdAt(appointment.getCreatedAt())
-                .updatedAt(appointment.getUpdatedAt())
+                .id(appointment != null ? appointment.getId() : null)
+                .clientId(appointment != null ? appointment.getClientId() : null)
+                .employeeId(appointment != null ? appointment.getEmployeeId() : null)
+                .serviceId(appointment != null ? appointment.getBeautyServiceId() : null)
+                .startAt(appointment != null ? appointment.getStartAt() : null)
+                .endAt(appointment != null ? appointment.getEndAt() : null)
+                .status(appointment != null && appointment.getStatus() != null ? appointment.getStatus().name() : "UNKNOWN")
+                .cancellationReason(appointment != null ? appointment.getCancellationReason() : null)
+                .createdAt(appointment != null ? appointment.getCreatedAt() : null)
+                .updatedAt(appointment != null ? appointment.getUpdatedAt() : null)
                 .build();
     }
 }

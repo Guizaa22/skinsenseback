@@ -1,6 +1,7 @@
 package beauty_center.modules.users.service;
 
 import beauty_center.common.error.EntityNotFoundException;
+import beauty_center.modules.users.dto.UserUpdateRequest;
 import beauty_center.modules.users.entity.AuthProvider;
 import beauty_center.modules.users.entity.Role;
 import beauty_center.modules.users.entity.UserAccount;
@@ -187,6 +188,29 @@ public class UserAccountService {
         updates.setFullName(fullName);
         updates.setPhone(phone);
         return updateUser(id, updates);
+    }
+
+    /**
+     * Update user from DTO (name and phone).
+     */
+    public UserAccount updateUser(UUID id, UserUpdateRequest request) {
+        if (request == null) return userAccountRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("User", id));
+        return updateUser(id, request.getFullName(), request.getPhone());
+    }
+
+    /**
+     * Change password for the given user. Verifies current password first.
+     */
+    public void changePassword(UUID userId, String currentPassword, String newPassword) {
+        UserAccount user = userAccountRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("User", userId));
+        if (!passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
+            throw new IllegalArgumentException("Current password is incorrect");
+        }
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        userAccountRepository.save(user);
+        log.info("Password changed for user: {}", userId);
     }
 
     public void deactivateUser(UUID id) {

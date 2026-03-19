@@ -78,6 +78,23 @@ public class NotificationService {
     }
 
     /**
+     * Notify the client when an appointment is confirmed (e.g. after employee/admin confirms).
+     */
+    public void processAppointmentConfirmed(Appointment appointment) {
+        if (appointment == null) return;
+        log.info("Appointment confirmed, notifying client: appointmentId={}, clientId={}",
+                appointment.getId(), appointment.getClientId());
+        // TODO: send confirmation email/SMS to client via rules or direct
+    }
+
+    /**
+     * Process notification when an appointment is created/confirmed (e.g. confirm flow).
+     */
+    public void processAppointmentCreated(Appointment appointment) {
+        processAppointmentConfirmed(appointment);
+    }
+
+    /**
      * Cancel all pending (SCHEDULED) notifications for an appointment.
      */
     public void cancelNotificationsForAppointment(UUID appointmentId) {

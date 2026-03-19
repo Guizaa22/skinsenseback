@@ -14,9 +14,9 @@ jobs:
       postgres:
         image: postgres:16.11-alpine
         env:
-          POSTGRES_DB: beauty_center_db
+          POSTGRES_DB: beauty_center
           POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: mouadhmb12
+          POSTGRES_PASSWORD: gezgez
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -40,9 +40,9 @@ jobs:
 
     - name: Run tests
       env:
-        SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/beauty_center_db
+        SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/beauty_center
         SPRING_DATASOURCE_USERNAME: postgres
-        SPRING_DATASOURCE_PASSWORD: mouadhmb12
+        SPRING_DATASOURCE_PASSWORD: gezgez
       run: mvn test
 
     - name: Package JAR

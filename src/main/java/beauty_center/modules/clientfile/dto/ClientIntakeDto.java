@@ -21,5 +21,17 @@ public class ClientIntakeDto {
     private String careType;
     private String skincareRoutine;
     private String habits;
+
+    private String dateOfBirth;
+    private String address;
+    private String profession;
+
+    /** How they found Skinsense (comma-separated or free text) */
+    private String howFoundUs;
+
+    /** Consultation type checkboxes (comma-separated selected values): nettoyagePeau, hydraFacial, microneedling, autre */
+    private String consultationTypes;
+    /** Free text if autre selected */
+    private String consultationTypeAutre;
 }
 

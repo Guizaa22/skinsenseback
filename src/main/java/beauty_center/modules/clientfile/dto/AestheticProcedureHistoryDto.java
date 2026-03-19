@@ -16,5 +16,13 @@ import lombok.NoArgsConstructor;
 public class AestheticProcedureHistoryDto {
 
     private String procedures;
+
+    // Aesthetic history checkboxes
+    private Boolean peeling;
+    private Boolean laser;
+    private Boolean microneedlingHistory;
+    private Boolean injections;
+    private String dateDernierSoin;
+    private String detailsInjections;
 }
 

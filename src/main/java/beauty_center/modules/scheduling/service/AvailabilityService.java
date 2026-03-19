@@ -18,7 +18,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.*;
-import java.time.format.TextStyle;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -199,15 +198,20 @@ public class AvailabilityService {
                         int serviceDurationMinutes,
                         LocalDate date) {
 
-                // Get day of week (MON, TUE, etc.)
-                String dayOfWeek = date.getDayOfWeek().getDisplayName(TextStyle.SHORT, Locale.ENGLISH).toUpperCase();
+                // Get day of week: support both full (MONDAY) and short (MON) in DB
+                String dayOfWeekFull = date.getDayOfWeek().name();
+                String dayOfWeekShort = dayOfWeekFull.substring(0, 3);
+                List<WorkingTimeSlot> workingSlots = workingTimeSlotRepository
+                                .findByEmployeeIdAndDayOfWeek(employeeId, dayOfWeekFull);
+                if (workingSlots.isEmpty()) {
+                        workingSlots = workingTimeSlotRepository
+                                        .findByEmployeeIdAndDayOfWeek(employeeId, dayOfWeekShort);
+                }
 
                 // Get working hours for this day
-                List<WorkingTimeSlot> workingSlots = workingTimeSlotRepository
-                                .findByEmployeeIdAndDayOfWeek(employeeId, dayOfWeek);
 
                 if (workingSlots.isEmpty()) {
-                        log.debug("No working hours defined for employee {} on {}", employeeId, dayOfWeek);
+                        log.debug("No working hours defined for employee {} on {} / {}", employeeId, dayOfWeekFull, dayOfWeekShort);
                         return Collections.emptyList();
                 }
 
@@ -306,15 +310,19 @@ public class AvailabilityService {
         public boolean isAvailable(UUID employeeId, OffsetDateTime startAt, OffsetDateTime endAt) {
                 log.debug("Checking availability for employee {} from {} to {}", employeeId, startAt, endAt);
 
-                // Check working hours
+                // Check working hours (support both MONDAY and MON in DB)
                 LocalDate date = startAt.toLocalDate();
-                String dayOfWeek = date.getDayOfWeek().getDisplayName(TextStyle.SHORT, Locale.ENGLISH).toUpperCase();
-
+                String dayOfWeekFull = date.getDayOfWeek().name();
+                String dayOfWeekShort = dayOfWeekFull.substring(0, 3);
                 List<WorkingTimeSlot> workingSlots = workingTimeSlotRepository
-                                .findByEmployeeIdAndDayOfWeek(employeeId, dayOfWeek);
+                                .findByEmployeeIdAndDayOfWeek(employeeId, dayOfWeekFull);
+                if (workingSlots.isEmpty()) {
+                        workingSlots = workingTimeSlotRepository
+                                        .findByEmployeeIdAndDayOfWeek(employeeId, dayOfWeekShort);
+                }
 
                 if (workingSlots.isEmpty()) {
-                        log.debug("Employee {} does not work on {}", employeeId, dayOfWeek);
+                        log.debug("Employee {} does not work on {} / {}", employeeId, dayOfWeekFull, dayOfWeekShort);
                         return false;
                 }
 

@@ -2,6 +2,7 @@ package beauty_center.modules.users.controller;
 
 import beauty_center.common.api.ApiResponse;
 import beauty_center.common.error.EntityNotFoundException;
+import beauty_center.modules.users.dto.ChangePasswordRequest;
 import beauty_center.modules.users.dto.UserCreateRequest;
 import beauty_center.modules.users.dto.UserResponse;
 import beauty_center.modules.users.dto.UserUpdateRequest;
@@ -62,12 +63,24 @@ public class UserController {
             @Valid @RequestBody UserUpdateRequest request) {
 
         UUID userId = currentUser.getUserId();
-        UserAccount updated = userAccountService.updateUser(
-                userId, request.getFullName(), request.getPhone());
-
+        UserAccount updated = userAccountService.updateUser(userId, request);
         return ResponseEntity.ok(
                 ApiResponse.ok(UserResponse.fromEntity(updated), "Profile updated successfully")
         );
+    }
+
+    /**
+     * Change current user's password.
+     * Requires current password for verification.
+     */
+    @PostMapping("/change-password")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<Void>> changePassword(
+            @Valid @RequestBody ChangePasswordRequest request) {
+        log.info("Change password request");
+        UUID userId = currentUser.getUserId();
+        userAccountService.changePassword(userId, request.getCurrentPassword(), request.getNewPassword());
+        return ResponseEntity.ok(ApiResponse.ok(null, "Password changed successfully"));
     }
 
     /**
@@ -82,7 +95,7 @@ public class UserController {
         UserAccount user = userAccountService.getUserById(id)
                 .orElseThrow(() -> new EntityNotFoundException("User", id));
 
-        if (!currentUser.hasRole("ADMIN") && !currentUser.getUserId().equals(id)) {
+        if (!currentUser.hasRole("ADMIN") && !currentUser.hasRole("EMPLOYEE") && !currentUser.getUserId().equals(id)) {
             throw new AccessDeniedException("You can only view your own profile");
         }
 

@@ -193,7 +193,7 @@ GET /api/admin/audit?entityType=Appointment&entityId={uuid}&action=CREATE
 ### Login
 **Request:**
 ```bash
-curl -X POST http://localhost:8080/api/auth/login \
+curl -X POST http://localhost:8050/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "user@beautycenter.com",
@@ -218,7 +218,7 @@ curl -X POST http://localhost:8080/api/auth/login \
 ### Get Appointments
 **Request:**
 ```bash
-curl -X GET "http://localhost:8080/api/appointments?status=CONFIRMED" \
+curl -X GET "http://localhost:8050/api/appointments?status=CONFIRMED" \
   -H "Authorization: Bearer {accessToken}"
 ```
 
@@ -256,7 +256,7 @@ Most endpoints are compatible with Postman. Check the included `postman_auth_col
 
 For detailed API documentation, refer to `PROJECT_ROUTES.md` or check the swagger UI at:
 ```
-http://localhost:8080/swagger-ui.html
+http://localhost:8050/swagger-ui.html
 ```
 
 ---

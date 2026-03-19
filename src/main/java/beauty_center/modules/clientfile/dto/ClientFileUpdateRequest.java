@@ -24,6 +24,9 @@ public class ClientFileUpdateRequest {
     // Aesthetic Procedure History Section
     private AestheticProcedureHistoryDto aestheticProcedureHistory;
 
+    // Professional Assessment Section (EMPLOYEE/ADMIN only)
+    private ProfessionalAssessmentDto professionalAssessment;
+
     // Photo Consent
     private Boolean photoConsentForFollowup;
     private Boolean photoConsentForMarketing;

@@ -4,6 +4,7 @@ import beauty_center.common.error.EntityNotFoundException;
 import beauty_center.modules.appointments.entity.Appointment;
 import beauty_center.modules.appointments.entity.AppointmentStatus;
 import beauty_center.modules.appointments.repository.AppointmentRepository;
+import beauty_center.modules.appointments.repository.AppointmentSpecs;
 import beauty_center.modules.audit.service.AuditService;
 import beauty_center.modules.notifications.service.NotificationService;
 import beauty_center.modules.scheduling.service.AvailabilityService;
@@ -13,6 +14,7 @@ import beauty_center.modules.services.repository.BeautyServiceRepository;
 import beauty_center.modules.users.repository.UserAccountRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -58,7 +60,9 @@ public class AppointmentService {
             OffsetDateTime startAt,
             OffsetDateTime endAt) {
 
-        return appointmentRepository.findWithFilters(clientId, employeeId, status, startAt, endAt);
+        return appointmentRepository.findAll(
+                AppointmentSpecs.withFilters(clientId, employeeId, status, startAt, endAt),
+                Sort.by(Sort.Direction.DESC, "startAt"));
     }
 
     /**

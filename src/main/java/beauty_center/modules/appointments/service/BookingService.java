@@ -226,12 +226,16 @@ public class BookingService {
                 .beautyServiceId(serviceId)
                 .startAt(startAt)
                 .endAt(endAt)
-                .status(AppointmentStatus.CONFIRMED)
+                .status(AppointmentStatus.PENDING)
                 .build();
 
         try {
             Appointment saved = appointmentRepository.save(appointment);
             log.info("Appointment created successfully: {}", saved.getId());
+
+            // Log audit entry for new appointment
+            log.info("New PENDING appointment created: {} for client: {} service: {}",
+                    saved.getId(), saved.getClientId(), saved.getBeautyServiceId());
 
             // Audit log
             try { auditService.logCreate("Appointment", saved.getId(), saved); } catch (Exception e) { log.error("Audit log failed: {}", e.getMessage()); }

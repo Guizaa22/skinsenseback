@@ -18,9 +18,9 @@ docker compose up -d
 ```
 
 This will start PostgreSQL on `localhost:5432` with:
-- Database: `beauty_center_db`
+- Database: `beauty_center`
 - User: `postgres`
-- Password: `mouadhmb12`
+- Password: `gezgez`
 
 Verify with:
 ```bash
@@ -33,26 +33,26 @@ docker ps
 mvn spring-boot:run
 ```
 
-The API will be available at `http://localhost:8080`
+The API will be available at `http://localhost:8050`
 
 ### 3. Access API Documentation
 
-Swagger UI: `http://localhost:8080/swagger-ui.html`
+Swagger UI: `http://localhost:8050/swagger-ui.html`
 
-API Docs JSON: `http://localhost:8080/v3/api-docs`
+API Docs JSON: `http://localhost:8050/v3/api-docs`
 
 ## Configuration
 
 All configuration is environment-based via `application.yml`:
 
 ```bash
-export SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/beauty_center_db
+export SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/beauty_center
 export SPRING_DATASOURCE_USERNAME=postgres
-export SPRING_DATASOURCE_PASSWORD=mouadhmb12
+export SPRING_DATASOURCE_PASSWORD=gezgez
 export JWT_SECRET=your-secret-key-minimum-32-characters
 export JWT_EXP_MINUTES=60
 export JWT_REFRESH_EXP_DAYS=7
-export SERVER_PORT=8080
+export SERVER_PORT=8050
 ```
 
 ## Project Structure
