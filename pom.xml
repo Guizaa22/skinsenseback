@@ -7,7 +7,7 @@
         <artifactId>spring-boot-starter-parent</artifactId>
         <version>3.5.10</version>
         <relativePath/>
-    </parent>
+    </parent> 
 
     <groupId>beauty_center</groupId>
     <artifactId>beauty_center</artifactId>
@@ -24,9 +24,9 @@
         <jjwt.version>0.12.3</jjwt.version>
 
         <!-- Flyway Configuration -->
-        <flyway.url>jdbc:postgresql://localhost:5432/beauty_center</flyway.url>
-        <flyway.user>postgres</flyway.user>
-        <flyway.password>gezgez</flyway.password>
+        <flyway.url>${env.DATABASE_URL}</flyway.url>
+        <flyway.user>${env.PGUSER}</flyway.user>
+        <flyway.password>${env.PGPASSWORD}</flyway.password>
     </properties>
 
     <dependencies>

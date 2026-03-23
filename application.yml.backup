@@ -1,3 +1,8 @@
+# CORS: allow frontend (default includes http://localhost:3000)
+app:
+  cors:
+    origins: http://localhost:3000
+
 spring:
   application:
     name: beauty-center-api
@@ -30,14 +35,8 @@ spring:
       name: admin
       password: admin
 
-  servlet:
-    multipart:
-      enabled: true
-      max-file-size: 10MB
-      max-request-size: 20MB
-
 server:
-  port: ${SERVER_PORT:8050}
+  port: ${SERVER_PORT:8080}
   error:
     include-message: always
     include-binding-errors: always
@@ -72,9 +71,3 @@ logging:
     root: INFO
     beauty_center: DEBUG
     org.springframework.security: DEBUG
-
-app:
-  upload:
-    dir: ${UPLOAD_DIR:./uploads}
-    max-file-size: 10MB
-    allowed-types: image/jpeg,image/png,image/webp
