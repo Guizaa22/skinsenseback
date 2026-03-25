@@ -1,0 +1,38 @@
+spring:
+  config:
+    activate:
+      on-profile: dev
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/beauty_center}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:gezgez}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  defer-datasource-initialization: true
+  devtools:
+    restart:
+      enabled: true
+  mail:
+    host: smtp-relay.brevo.com
+    port: 587
+    username: a56116001@smtp-brevo.com
+    password: ${BREVO_SMTP_KEY}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+        debug: false
+jwt:
+  secret: ${JWT_SECRET:dev-secret-key-for-local-development-only-min32}
+encryption:
+  key: ${ENCRYPTION_KEY:change-me}
+logging:
+  level:
+    root: INFO

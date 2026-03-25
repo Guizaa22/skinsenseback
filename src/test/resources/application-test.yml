@@ -1,0 +1,67 @@
+spring:
+  config:
+    activate:
+      on-profile: test
+  application:
+    name: beauty-center-api
+  datasource:
+    url: jdbc:h2:mem:testdb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=false;DATABASE_TO_LOWER=true;CASE_INSENSITIVE_IDENTIFIERS=true;DEFAULT_NULL_ORDERING=HIGH
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 1
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    database-platform: org.hibernate.dialect.H2Dialect
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        format_sql: false
+        generate_statistics: false
+        jdbc:
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
+        use_sql_comments: false
+    show-sql: false
+    open-in-view: false
+  flyway:
+    enabled: false
+  defer-datasource-initialization: true
+  h2:
+    console:
+      enabled: true
+  security:
+    user:
+      name: admin
+      password: admin
+server:
+  port: 8050
+  error:
+    include-message: always
+    include-binding-errors: always
+jwt:
+  secret: test-jwt-secret-minimum-32-characters-long-for-test
+  expiration-minutes: 60
+  refresh-expiration-days: 7
+encryption:
+  key: test-encryption-key
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+  api-docs:
+    path: /v3/api-docs
+  show-actuator: true
+logging:
+  level:
+    root: WARN
+    org.springframework.boot: INFO
+    org.springframework.security: DEBUG
+    org.hibernate: WARN

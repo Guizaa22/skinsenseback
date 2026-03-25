@@ -1,32 +1,11 @@
 {
-  "name": "centre-de-beauté-&-soins-(frontoffice)",
+  "name": "beauty-center-project",
   "private": true,
-  "version": "0.0.0",
-  "type": "module",
+  "description": "Beauty Center: backend (8050) + frontend (separate port). Run backend with ./run.ps1 or mvnw spring-boot:run. Run frontend from its folder: npm run dev.",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
-    "start": "serve -l 3000 -s dist"
-  },
-  "dependencies": {
-    "lucide-react": "^0.563.0",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "react-router-dom": "^7.13.0",
-    "serve": "^14.2.0"
-  },
-  "devDependencies": {
-    "@types/node": "^22.14.0",
-    "@vitejs/plugin-react": "^5.0.0",
-    "terser": "^5.46.1",
-    "typescript": "~5.8.2",
-    "vite": "^6.2.0"
-  },
-  "engines": {
-    "node": "18.x || 20.x || 22.x"
-  },
-  "optionalDependencies": {
-    "@rollup/rollup-linux-x64-gnu": "^4.60.0"
+    "backend": "mvnw spring-boot:run",
+    "dev:frontend": "npm run dev --prefix frontend",
+    "build:frontend": "npm run build --prefix frontend",
+    "install:frontend": "npm install --prefix frontend"
   }
 }

@@ -1,26 +1,87 @@
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
+HELP.md
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
 
-node_modules
-dist
-dist-ssr
-*.local
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
+### IntelliJ IDEA ###
 .idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+*.iws
+*.iml
+*.ipr
+*.class
+*.ids
+runConfigurations/
 
-.vercel
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
+*.swp
+*.swo
+*~
+
+### Eclipse ###
+.classpath.bak
+.project.bak
+
+### Environment ###
+.env
+.env.local
+.env.*.local
+*.properties.local
+.env.development
+application-local.yml
+
+### OS ###
+Thumbs.db
+.DS_Store
+
+### Logs ###
+logs/
+*.log
+log4j.properties
+
+### Database ###
+*.db
+*.sqlite
+*.h2.db
+*.sql.gz
+
+### Maven ###
+.m2/
+*.jar.orig
+dependency-reduced-pom.xml
+
+### Temporary Files ###
+*.tmp
+*.temp
+.cache/
+
+### Backup Files ###
+*.rej
+*.orig
+
+### Docs
+TESTING_GUIDE_PHASE1.md
+IMPLEMENTATION_PHASE1_SUMMARY.md
+FILES_MODIFIED_CREATED.md
+EXECUTIVE_SUMMARY.md
+DOCUMENTATION_INDEX-epic1.md
